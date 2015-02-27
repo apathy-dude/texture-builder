@@ -1,0 +1,185 @@
+.menu {
+    position: absolute;
+    background: none;
+    display: block;
+    color: #fff;
+    min-width: 96px;
+    max-width: 100%;
+    min-height: 96px;
+    max-height: 100%;
+    overflow: hidden;
+}
+
+.menu .top-left {
+    display: block;
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    cursor: nw-resize;
+}
+.menu .top {
+    display: block;
+    position: absolute;
+    width: calc(100% - 64px);
+    height: 32px;
+    left: 32px;
+    cursor: grab;
+}
+.menu .top-right {
+    display: block;
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    right: 0px;
+    transform:rotate(90deg);
+    cursor: ne-resize;
+}
+.menu .left {
+    display: block;
+    position: absolute;
+    width: 32px;
+    height: calc(100% - 64px);
+    top: 32px;
+    cursor: w-resize;
+}
+.menu .center {
+    display: block;
+    position: absolute;
+    width: calc(100% - 64px);
+    height: calc(100% - 64px);
+    top: 32px;
+    left: 32px;
+    overflow: visible;
+}
+.menu .right {
+    display: block;
+    position: absolute;
+    width: 32px;
+    height: calc(100% - 64px);
+    top: 32px;
+    left: calc(100% - 32px);
+    transform:rotate(180deg);
+    cursor: e-resize;
+}
+.menu .bottom-left {
+    display: block;
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    bottom: 0px;
+    transform:rotate(-90deg);
+    cursor: sw-resize;
+}
+.menu .bottom {
+    display: block;
+    position: absolute;
+    width: calc(100% - 64px);
+    height: 32px;
+    bottom: 0px;
+    left: 32px;
+    transform:rotate(180deg);
+    cursor: s-resize;
+}
+.menu .bottom-right {
+    display: block;
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    bottom: 0px;
+    right: 0px;
+    transform:rotate(180deg);
+    cursor: se-resize;
+}
+
+.menu.glass .corner1, .menu.glass .corner {
+    background-image: url('../images/menus/glass/corner-round.png');
+}
+.menu.glass .corner2 {
+    background-image: url('../images/menus/glass/corner-flat.png');
+}
+.menu.glass .horizontal {
+    background-image: url('../images/menus/glass/horizontal.png');
+}
+.menu.glass .vertical {
+    background-image: url('../images/menus/glass/vertical.png');
+}
+.menu.glass .center {
+    background-image: url('../images/menus/glass/center.png');
+}
+
+.menu.metal .corner { 
+    background-image: url('../images/menus/metal/corner.png');
+}
+.menu.metal .horizontal {
+    background-image: url('../images/menus/metal/horizontal.png');
+}
+.menu.metal .vertical {
+    background-image: url('../images/menus/metal/vertical.png');
+}
+.menu.metal .center {
+    background-image: url('../images/menus/metal/center.png');
+}
+
+.menu.metal-red .corner { 
+    background-image: url('../images/menus/metal/corner.png');
+}
+.menu.metal-red .horizontal {
+    background-image: url('../images/menus/metal/horizontal.png');
+}
+.menu.metal-red .vertical {
+    background-image: url('../images/menus/metal/vertical.png');
+}
+.menu.metal-red .center {
+    background-image: url('../images/menus/metal/center.png');
+}
+.menu.metal-red .top {
+    background-image: url('../images/menus/metal/red/top.png');
+}
+.menu.metal-red .top-left {
+    background-image: url('../images/menus/metal/red/top-left.png');
+}
+.menu.metal-red .top-right {
+    background-image: url('../images/menus/metal/red/top-right.png');
+}
+
+
+.menu.metal-red-half .corner { 
+    background-image: url('../images/menus/metal/corner.png');
+}
+.menu.metal-red-half .horizontal {
+    background-image: url('../images/menus/metal/horizontal.png');
+}
+.menu.metal-red-half .vertical {
+    background-image: url('../images/menus/metal/vertical.png');
+}
+.menu.metal-red-half .center {
+    background-image: url('../images/menus/metal/center.png');
+}
+.menu.metal-red-half .top-left {
+    background-image: url('../images/menus/metal/red/top-left.png');
+}
+.menu.metal-red-half .top {
+     background-image: url('../images/menus/metal/red/half/split.png'),
+        url('../images/menus/metal/red/top.png'),
+        url('../images/menus/metal/horizontal.png');
+    background-position: center top, left top, right top;
+    background-repeat: no-repeat, no-repeat, no-repeat;
+    background-size: 32px 32px, 50% 32px, 50% 32px;
+}
+
+.menu select {
+    border: 0 !important;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background: url('../images/grey_arrowDownGrey.png') no-repeat, rgba(256, 256, 256, 0.1);
+    background-position: right center;
+    width: 120px;
+    cursor: url('../images/cursor_pointerFlat_shadow.png'), auto;
+    font-family: 'kenvector_future';
+    color: #000;
+}
+
+.menu input {
+    font-family: 'kenvector_future';
+}
+
