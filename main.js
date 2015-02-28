@@ -1,11 +1,6 @@
 var gamejs = require('gamejs');
 var menuBuilder = require('./src/menuBuilder');
 
-var solidLayer = require('./src/layers/solid');
-var noiseLayer = require('./src/layers/noise');
-var voronoiLayer = require('./src/layers/voronoi');
-var shadowLayer = require('./src/layers/shadow');
-
 var layerControl = require('./src/layers/component/control');
 
 var layerOptions = require('./src/layers');
