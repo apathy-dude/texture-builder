@@ -1,5 +1,4 @@
 var gamejs = require('gamejs');
-var SurfaceFactory = require('./src/SurfaceFactory');
 var menuBuilder = require('./src/menuBuilder');
 
 var solidLayer = require('./src/layers/solid');
@@ -18,8 +17,6 @@ var wrapper;
 var menu;
 var menuCanvasContext;
 var surface;
-var draw = true;
-var fetch = true;
 
 var layers = [];
 
