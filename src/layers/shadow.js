@@ -1,4 +1,4 @@
-var layerControl = require('./control');
+var layerControl = require('./component/control');
 var SurfaceFactory = require('../SurfaceFactory');
 
 function render(data, layers) {

@@ -6,7 +6,7 @@ var noiseLayer = require('./src/layers/noise');
 var voronoiLayer = require('./src/layers/voronoi');
 var shadowLayer = require('./src/layers/shadow');
 
-var layerControl = require('./src/layers/control');
+var layerControl = require('./src/layers/component/control');
 
 //Preload image and sound assets
 gamejs.preload(require('./src/images'));
