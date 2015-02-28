@@ -403,7 +403,75 @@ module.exports = {
     solid: solid,
     voronoi: voronoi
 };
-;module.exports = ["images/cursor_pointerFlat_shadow.png","images/grey_arrowDownGrey.png","images/grey_arrow_down.png","images/grey_arrow_up.png","images/menus/glass/center.png","images/menus/glass/corner-cut.png","images/menus/glass/corner-round.png","images/menus/glass/horizontal.png","images/menus/glass/vertical.png","images/menus/metal/center.png","images/menus/metal/corner.png","images/menus/metal/horizontal.png","images/menus/metal/red/half/split.png","images/menus/metal/red/top-left.png","images/menus/metal/red/top-right.png","images/menus/metal/red/top.png","images/menus/metal/vertical.png","images/red_x.png"];;module.exports = function(listeners, onchange, label, def, min, max) {
+;module.exports = ["images/cursor_pointerFlat_shadow.png","images/grey_arrowDownGrey.png","images/grey_arrow_down.png","images/grey_arrow_up.png","images/menus/glass/center.png","images/menus/glass/corner-cut.png","images/menus/glass/corner-round.png","images/menus/glass/horizontal.png","images/menus/glass/vertical.png","images/menus/metal/center.png","images/menus/metal/corner.png","images/menus/metal/horizontal.png","images/menus/metal/red/half/split.png","images/menus/metal/red/top-left.png","images/menus/metal/red/top-right.png","images/menus/metal/red/top.png","images/menus/metal/vertical.png","images/red_x.png"];;module.exports = function(layers, menu, onchange) {
+    return function(layer) {
+        var div = document.createElement('div');
+        div.className = 'menu-controls';
+
+        var close = (function() {
+            var button = document.createElement('input');
+            button.input = 'button';
+            button.className = 'close';
+
+            button.onclick = function(e) {
+                var l = layers.indexOf(layer);
+                if(l > -1) {
+                    layers.splice(l, 1);
+                    menu.removeChild(menu.childNodes[l]);
+                    onchange(e);
+                }
+            };
+
+            return button;
+        })();
+
+        var up = (function() {
+            var button = document.createElement('input');
+            button.input = 'button';
+            button.className = 'up-arrow';
+
+            button.onclick = function(e) {
+                var l = layers.indexOf(layer);
+                if(l > 0) {
+                    var tempLayer = layers[l-1];
+                    layers[l-1] = layers[l];
+                    layers[l] = tempLayer;
+                    menu.insertBefore(menu.childNodes[l], menu.childNodes[l-1]);
+                    onchange(e);
+                }
+            };
+
+            return button;
+        })();
+
+        var down = (function() {
+            var button = document.createElement('input');
+            button.input = 'button';
+            button.className = 'down-arrow';
+
+            button.onclick = function(e) {
+                var l = layers.indexOf(layer);
+                if(l > -1 && l < layers.length - 1) {
+                    var tempLayer = layers[l];
+                    layers[l] = layers[l+1];
+                    layers[l+1] = tempLayer;
+                    menu.insertBefore(menu.childNodes[l+1], menu.childNodes[l]);
+                    onchange(e);
+                }
+            };
+
+            return button;
+        })();
+
+        div.appendChild(close);
+        div.appendChild(up);
+        div.appendChild(down);
+
+        return div;
+    };
+};
+
+;module.exports = function(listeners, onchange, label, def, min, max) {
     var wrapper = document.createElement('div');
     wrapper.innerHTML = label;
 
@@ -521,74 +589,6 @@ module.exports = {
 
     return wrapper;
 };
-;module.exports = function(layers, menu, onchange) {
-    return function(layer) {
-        var div = document.createElement('div');
-        div.className = 'menu-controls';
-
-        var close = (function() {
-            var button = document.createElement('input');
-            button.input = 'button';
-            button.className = 'close';
-
-            button.onclick = function(e) {
-                var l = layers.indexOf(layer);
-                if(l > -1) {
-                    layers.splice(l, 1);
-                    menu.removeChild(menu.childNodes[l]);
-                    onchange(e);
-                }
-            };
-
-            return button;
-        })();
-
-        var up = (function() {
-            var button = document.createElement('input');
-            button.input = 'button';
-            button.className = 'up-arrow';
-
-            button.onclick = function(e) {
-                var l = layers.indexOf(layer);
-                if(l > 0) {
-                    var tempLayer = layers[l-1];
-                    layers[l-1] = layers[l];
-                    layers[l] = tempLayer;
-                    menu.insertBefore(menu.childNodes[l], menu.childNodes[l-1]);
-                    onchange(e);
-                }
-            };
-
-            return button;
-        })();
-
-        var down = (function() {
-            var button = document.createElement('input');
-            button.input = 'button';
-            button.className = 'down-arrow';
-
-            button.onclick = function(e) {
-                var l = layers.indexOf(layer);
-                if(l > -1 && l < layers.length - 1) {
-                    var tempLayer = layers[l];
-                    layers[l] = layers[l+1];
-                    layers[l+1] = tempLayer;
-                    menu.insertBefore(menu.childNodes[l+1], menu.childNodes[l]);
-                    onchange(e);
-                }
-            };
-
-            return button;
-        })();
-
-        div.appendChild(close);
-        div.appendChild(up);
-        div.appendChild(down);
-
-        return div;
-    };
-};
-
 ;var text = require('./component/textInput');
 var numberRange = require('./component/numberRangeInput');
 var SurfaceFactory = require('../SurfaceFactory');
@@ -646,7 +646,7 @@ module.exports = function(onchange, layerControl) {
 
     return obj;
 };
-;var layerControl = require('./control');
+;var layerControl = require('./component/control');
 var SurfaceFactory = require('../SurfaceFactory');
 
 function render(data, layers) {
@@ -987,7 +987,7 @@ var noiseLayer = require('./src/layers/noise');
 var voronoiLayer = require('./src/layers/voronoi');
 var shadowLayer = require('./src/layers/shadow');
 
-var layerControl = require('./src/layers/control');
+var layerControl = require('./src/layers/component/control');
 
 //Preload image and sound assets
 gamejs.preload(require('./src/images'));
