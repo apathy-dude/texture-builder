@@ -9,13 +9,11 @@ module.exports = function(grunt) {
                 src: ['test/**/*.js']
             }
         },
-        concat: {
-            options: {
-                separator: ';'
-            },
+        browserify: {
             dist: {
-                src: ['src/**/*.js', 'main.js'],
-                dest: 'bin/<%= pkg.name %>.js'
+                files: {
+                    'bin/<%= pkg.name %>.js': ['src/**/*.js', 'main.js'],
+                }
             }
         },
         uglify: {
@@ -24,7 +22,7 @@ module.exports = function(grunt) {
             },
             dist: {
                 files: {
-                    'bin/<%= pkg.name %>.min.js': ['<%= concat.dist.dest %>']
+                    'bin/<%= pkg.name %>.min.js': ['bin/<%= pkg.name %>.js']
                 }
             }
         },
@@ -60,8 +58,8 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-uglify');
     grunt.loadNpmTasks('grunt-contrib-jshint');
     grunt.loadNpmTasks('grunt-contrib-watch');
-    grunt.loadNpmTasks('grunt-contrib-concat');
     grunt.loadNpmTasks('grunt-mocha-test');
+    grunt.loadNpmTasks('grunt-browserify');
 
     grunt.registerMultiTask('toArray', 'Put file system file names into an array with module.exports preceding it', function() {
         var data = [];
@@ -87,6 +85,6 @@ module.exports = function(grunt) {
     });
 
     grunt.registerTask('test', ['jshint', 'mochaTest']);
-    grunt.registerTask('default', ['toArray', 'jshint', 'mochaTest', 'concat', 'uglify']);
+    grunt.registerTask('default', ['toArray', 'jshint', 'mochaTest', 'browserify', 'uglify']);
 };
 
