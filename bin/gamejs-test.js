@@ -26,11 +26,42 @@ function noise() {
         seed: 0
     };
 
-    if(arguments.length === 5) {
-        if(arguments[3] instanceof Array && arguments[4] instanceof Array && arguments[3].length >= 3 && arguments[4].length >= 3) {
-            width = arguments[0];
-            height = arguments[1];
+    if(arguments.length === 6) {
+        if(arguments[4] instanceof Array && arguments[5] instanceof Array && arguments[4].length >= 3 && arguments[5].length >= 3) {
+            surface = arguments[0];
+            width = arguments[1];
+            height = arguments[2];
+            seed = arguments[3];
+            minR = arguments[4][0];
+            minG = arguments[4][1];
+            minB = arguments[4][2];
+            maxR = arguments[5][0];
+            maxG = arguments[5][1];
+            maxB = arguments[5][2];
+
+            if(arguments[4].length > 3)
+                minA = arguments[4][3];
+
+            if(arguments[5].length > 3)
+                maxA = arguments[5][3];
+        }
+        else {
+            throw new Error('Improper arguments for noise surface');
+        }
+    }
+    else if(arguments.length === 5) {
+        surface = arguments[0];
+        if(arguments[1] instanceof Array) {
+            width = arguments[1][0];
+            height = arguments[1][1];
             seed = arguments[2];
+        }
+        else {
+            width = arguments[1];
+            height = arguments[2];
+        }
+
+        if(arguments[3] instanceof Array && arguments[4] instanceof Array && arguments[3].length >= 3 && arguments[4].length >= 3) {
             minR = arguments[3][0];
             minG = arguments[3][1];
             minB = arguments[3][2];
@@ -49,14 +80,13 @@ function noise() {
         }
     }
     else if(arguments.length === 4) {
-        if(arguments[0] instanceof Array) {
-            width = arguments[0][0];
-            height = arguments[0][1];
-            seed = arguments[1];
+        surface = arguments[0];
+        if(arguments[1] instanceof Array) {
+            width = arguments[1][0];
+            height = arguments[1][1];
         }
         else {
-            width = arguments[0];
-            height = arguments[1];
+            throw new Error('Improper arguments for noise surface');
         }
 
         if(arguments[2] instanceof Array && arguments[3] instanceof Array && arguments[2].length >= 3 && arguments[3].length >= 3) {
@@ -72,30 +102,6 @@ function noise() {
 
             if(arguments[3].length > 3)
                 maxA = arguments[3][3];
-        }
-        else {
-            throw new Error('Improper arguments for noise surface');
-        }
-    }
-    else if(arguments.length === 3) {
-        if(arguments[0] instanceof Array) {
-            width = arguments[0][0];
-            height = arguments[0][1];
-        }
-
-        if(arguments[1] instanceof Array && arguments[2] instanceof Array && arguments[1].length >= 3 && arguments[2].length >= 3) {
-            minR = arguments[1][0];
-            minG = arguments[1][1];
-            minB = arguments[1][2];
-            maxR = arguments[2][0];
-            maxG = arguments[2][1];
-            maxB = arguments[2][2];
-
-            if(arguments[1].length > 3)
-                minA = arguments[1][3];
-
-            if(arguments[2].length > 3)
-                maxA = arguments[2][3];
         }
         else {
             throw new Error('Improper arguments for noise surface');
@@ -189,20 +195,32 @@ function relative() {
 function solid() {
     var width, height, color, surface;
 
-    if(arguments.length === 3) {
+    if(arguments.length === 4) {
+        surface = arguments.length[0];
         width = arguments.length[0];
         height = arguments.length[1];
         color = arguments.length[2];
     }
-    else if(arguments.length === 2) {
-        if(arguments[0] instanceof Array) {
-            width = arguments[0][0];
-            height = arguments[0][1];
-            color = arguments[1];
+    else if(arguments.length === 3) {
+        surface = arguments.length[0];
+        if(arguments[1] instanceof Array) {
+            width = arguments[1][0];
+            height = arguments[1][1];
+            color = arguments[2];
         }
         else {
-            width = arguments[0];
-            height = arguments[1];
+            width = arguments[1];
+            height = arguments[2];
+        }
+    }
+    else if(arguments.length === 2) {
+        surface = arguments[0];
+        if(arguments[1] instanceof Array) {
+            width = arguments[0][0];
+            height = arguments[0][1];
+        }
+        else {
+            throw new Error('Improper arguments for solid surface');
         }
     }
     else if(arguments.length === 1 && arguments[0] instanceof Array) {
@@ -213,7 +231,10 @@ function solid() {
         throw new Error('Improper arguments for solid surface');
     }
 
-    surface = new Surface(width, height);
+    if(!surface)
+        surface = new Surface(width, height);
+    else
+        surface.clear();
 
     if(color)
         surface.fill(color);
@@ -241,75 +262,80 @@ function voronoi() {
         seed: 0
     };
 
-    if(arguments.length === 5) {
-        width = arguments[0];
-        height = arguments[1];
-        seed = arguments[2];
-        pointCount = arguments[3];
-        voronoiLineColor = arguments[4];
-        voronoiLineWidth = arguments[5];
+    if(arguments.length === 6) {
+        surface = arguments[0];
+        width = arguments[1];
+        height = arguments[2];
+        seed = arguments[3];
+        pointCount = arguments[4];
+        voronoiLineColor = arguments[5];
+        voronoiLineWidth = arguments[6];
     }
-    else if(arguments.length === 4) {
-        if(arguments[0] instanceof Array) {
-            width = arguments[0][0];
-            height = arguments[0][1];
-            seed = arguments[1];
-            pointCount = arguments[2];
-            voronoiLineColor = arguments[3];
-            voronoiLineWidth = arguments[4];
-        }
-        else {
-            width = arguments[0];
-            height = arguments[1];
+    else if(arguments.length === 5) {
+        surface = arguments[0];
+        if(arguments[1] instanceof Array) {
+            width = arguments[1][0];
+            height = arguments[1][1];
             seed = arguments[2];
             pointCount = arguments[3];
             voronoiLineColor = arguments[4];
+            voronoiLineWidth = arguments[5];
+        }
+        else {
+            width = arguments[1];
+            height = arguments[2];
+            seed = arguments[3];
+            pointCount = arguments[4];
+            voronoiLineColor = arguments[5];
+        }
+    }
+    else if(arguments.length === 4) {
+        surface = arguments[0];
+        if(arguments[1] instanceof Array) {
+            width = arguments[1][0];
+            height = arguments[1][1];
+            seed = arguments[2];
+            if(arguments[3] instanceof Object) {
+                pointCount = arguments[3].points;
+                voronoiLineColor = arguments[3].lineColor;
+                voronoiLineWidth = arguments[3].lineWidth;
+            }
+            else {
+                pointCount = arguments[3];
+                voronoiLineColor = arguments[4];
+            }
+        }
+        else {
+            width = arguments[1];
+            height = arguments[2];
+            seed = arguments[3];
+            pointCount = arguments[4];
         }
     }
     else if(arguments.length === 3) {
-        if(arguments[0] instanceof Array) {
-            width = arguments[0][0];
-            height = arguments[0][1];
-            seed = arguments[1];
+        surface = arguments[0];
+        if(arguments[1] instanceof Array) {
+            width = arguments[1][0];
+            height = arguments[1][1];
             if(arguments[2] instanceof Object) {
+                seed = arguments[2].seed;
                 pointCount = arguments[2].points;
                 voronoiLineColor = arguments[2].lineColor;
                 voronoiLineWidth = arguments[2].lineWidth;
             }
             else {
-                pointCount = arguments[2];
-                voronoiLineColor = arguments[3];
+                seed = arguments[2];
             }
         }
         else {
-            width = arguments[0];
-            height = arguments[1];
-            seed = arguments[2];
-            pointCount = arguments[3];
+            width = arguments[1];
+            height = arguments[2];
         }
     }
-    else if(arguments.length === 2) {
-        if(arguments[0] instanceof Array) {
-            width = arguments[0][0];
-            height = arguments[0][1];
-            if(arguments[1] instanceof Object) {
-                seed = arguments[1].seed;
-                pointCount = arguments[1].points;
-                voronoiLineColor = arguments[1].lineColor;
-                voronoiLineWidth = arguments[1].lineWidth;
-            }
-            else {
-                seed = arguments[1];
-            }
-        }
-        else {
-            width = arguments[0];
-            height = arguments[1];
-        }
-    }
-    else if(arguments.length === 1 && arguments[0] instanceof Array) {
-        width = arguments[0][0];
-        height = arguments[0][1];
+    else if(arguments.length === 2 && arguments[1] instanceof Array) {
+        surface = arguments[0];
+        width = arguments[1][0];
+        height = arguments[1][1];
     }
     else {
         throw new Error('Improper arguments for voronoi surface');
@@ -320,7 +346,7 @@ function voronoi() {
     seed = seed || defaults.seed;
     pointCount = pointCount || (width + height) / 2;
 
-    surface = solid(width, height);
+    surface = solid(surface, width, height);
     rand = random.Alea(seed);
     points = [];
 
@@ -377,7 +403,389 @@ module.exports = {
     solid: solid,
     voronoi: voronoi
 };
-;module.exports = ["images/cursor_pointerFlat_shadow.png","images/grey_arrowDownGrey.png","images/grey_arrow_down.png","images/grey_arrow_up.png","images/menus/glass/center.png","images/menus/glass/corner-cut.png","images/menus/glass/corner-round.png","images/menus/glass/horizontal.png","images/menus/glass/vertical.png","images/menus/metal/center.png","images/menus/metal/corner.png","images/menus/metal/horizontal.png","images/menus/metal/red/half/split.png","images/menus/metal/red/top-left.png","images/menus/metal/red/top-right.png","images/menus/metal/red/top.png","images/menus/metal/vertical.png","images/red_x.png"];;;function move(menu, binder) {
+;module.exports = ["images/cursor_pointerFlat_shadow.png","images/grey_arrowDownGrey.png","images/grey_arrow_down.png","images/grey_arrow_up.png","images/menus/glass/center.png","images/menus/glass/corner-cut.png","images/menus/glass/corner-round.png","images/menus/glass/horizontal.png","images/menus/glass/vertical.png","images/menus/metal/center.png","images/menus/metal/corner.png","images/menus/metal/horizontal.png","images/menus/metal/red/half/split.png","images/menus/metal/red/top-left.png","images/menus/metal/red/top-right.png","images/menus/metal/red/top.png","images/menus/metal/vertical.png","images/red_x.png"];;module.exports = function(listeners, onchange, label, def, min, max) {
+    var wrapper = document.createElement('div');
+    wrapper.innerHTML = label;
+
+    var number = (function(listeners) {
+        var num = document.createElement('input');
+        num.type = 'number';
+        num.value = def;
+        num.onchange = onchange;
+
+        listeners.value = function() {
+            return Number.parseInt(num.value);
+        };
+
+        if(min || max || min === 0 || max === 0) {
+            listeners.handle = function() {
+                var val = Number.parseInt(num.value);
+                if(min || min === 0)
+                    if(val < min)
+                        num.value = min;
+
+                if(max || max === 0)
+                    if (val > max)
+                        num.value = max;
+            };
+        }
+
+        return num;
+    })(listeners);
+
+    wrapper.appendChild(number);
+
+    return wrapper;
+};
+;module.exports = function(listeners, onchange, label, minVal, maxVal) {
+    var wrapper = document.createElement('div');
+    wrapper.innerHTML = label;
+
+    listeners.min = {};
+    listeners.max = {};
+
+    var min = (function(listeners) {
+        var number = document.createElement('input');
+        number.type = 'number';
+        number.value = minVal;
+        number.onchange = onchange;
+
+        listeners.value = function() {
+            return Number.parseInt(number.value);
+        };
+
+        listeners.handle = function() {
+            if(number.value < minVal)
+                number.value = minVal;
+        };
+
+        return number;
+    })(listeners.min);
+
+    var max = (function(listeners) {
+        var number = document.createElement('input');
+        number.type = 'number';
+        number.value = maxVal;
+        number.onchange = onchange;
+
+        listeners.value = function() {
+            return Number.parseInt(number.value);
+        };
+
+        listeners.handle = function() {
+            if(number.value > maxVal)
+                number.value = maxVal;
+        };
+
+        return number;
+    })(listeners.max);
+
+    var arrow = (function() {
+        var text = document.createElement('span');
+        text.innerHTML = '-';
+
+        return text;
+    })();
+
+    listeners.handle = function() {
+        if(min.value > max.value)
+            min.value = max.value;
+    };
+
+    wrapper.appendChild(min);
+    wrapper.appendChild(arrow);
+    wrapper.appendChild(max);
+
+    return wrapper;
+};
+
+;module.exports = function(listeners, onchange, label, def) {
+    var wrapper = document.createElement('div');
+    wrapper.innerHTML = label;
+    def = def || '';
+
+    var text = (function(listeners) {
+        var text = document.createElement('input');
+        text.type = 'text';
+        text.value = def;
+        text.onchange = onchange;
+
+        listeners.value = function() {
+            return text.value;
+        };
+
+        return text;
+    })(listeners);
+
+    wrapper.appendChild(text);
+
+    return wrapper;
+};
+;module.exports = function(layers, menu, onchange) {
+    return function(layer) {
+        var div = document.createElement('div');
+        div.className = 'menu-controls';
+
+        var close = (function() {
+            var button = document.createElement('input');
+            button.input = 'button';
+            button.className = 'close';
+
+            button.onclick = function(e) {
+                var l = layers.indexOf(layer);
+                if(l > -1) {
+                    layers.splice(l, 1);
+                    menu.removeChild(menu.childNodes[l]);
+                    onchange(e);
+                }
+            };
+
+            return button;
+        })();
+
+        var up = (function() {
+            var button = document.createElement('input');
+            button.input = 'button';
+            button.className = 'up-arrow';
+
+            button.onclick = function(e) {
+                var l = layers.indexOf(layer);
+                if(l > 0) {
+                    var tempLayer = layers[l-1];
+                    layers[l-1] = layers[l];
+                    layers[l] = tempLayer;
+                    menu.insertBefore(menu.childNodes[l], menu.childNodes[l-1]);
+                    onchange(e);
+                }
+            };
+
+            return button;
+        })();
+
+        var down = (function() {
+            var button = document.createElement('input');
+            button.input = 'button';
+            button.className = 'down-arrow';
+
+            button.onclick = function(e) {
+                var l = layers.indexOf(layer);
+                if(l > -1 && l < layers.length - 1) {
+                    var tempLayer = layers[l];
+                    layers[l] = layers[l+1];
+                    layers[l+1] = tempLayer;
+                    menu.insertBefore(menu.childNodes[l+1], menu.childNodes[l]);
+                    onchange(e);
+                }
+            };
+
+            return button;
+        })();
+
+        div.appendChild(close);
+        div.appendChild(up);
+        div.appendChild(down);
+
+        return div;
+    };
+};
+
+;var text = require('./component/textInput');
+var numberRange = require('./component/numberRangeInput');
+var SurfaceFactory = require('../SurfaceFactory');
+
+function render(data) {
+    var args = data.listeners;
+    var surf = SurfaceFactory.noise(data.surface,
+        [64, 64],
+        args.seed.value(),
+        [
+            args.red.min.value(),
+            args.green.min.value(),
+            args.blue.min.value(),
+            args.alpha.min.value()
+        ],
+        [
+            args.red.max.value(),
+            args.green.max.value(),
+            args.blue.max.value(),
+            args.alpha.max.value(),
+        ]);
+    //TODO: remove cache hack
+    data.surface = surf;
+    return surf;
+}
+
+module.exports = function(onchange, layerControl) {
+    var div = document.createElement('div');
+    div.className = 'control';
+    div.innerHTML = 'Noise';
+
+    var listeners = {
+        seed: {},
+        red: {},
+        green: {},
+        blue: {},
+        alpha: {}
+    };
+
+    var seedWrapper = text(listeners.seed, onchange, 'Seed: ', '1');
+
+    var redWrapper = numberRange(listeners.red, onchange, 'Red: ', 0, 255);
+    var greenWrapper = numberRange(listeners.green, onchange, 'Green: ', 0, 255);
+    var blueWrapper = numberRange(listeners.blue, onchange, 'Blue: ', 0, 255);
+    var alphaWrapper = numberRange(listeners.alpha, onchange, 'Alpha: ', 0, 255);
+
+    var obj = { div: div, listeners: listeners, render: render };
+
+    div.appendChild(layerControl(obj));
+    div.appendChild(seedWrapper);
+    div.appendChild(redWrapper);
+    div.appendChild(greenWrapper);
+    div.appendChild(blueWrapper);
+    div.appendChild(alphaWrapper);
+
+    return obj;
+};
+;var layerControl = require('./control');
+var SurfaceFactory = require('../SurfaceFactory');
+
+function render(data, layers) {
+    var args = data.listeners;
+    var size = 64;
+    var surf = SurfaceFactory.relative(layers[2].render(layers[2]),
+        function color(xPos, yPos, sourceInfo, data) {
+            var pixel = sourceInfo.get(xPos, yPos);
+            pixel[3] += (12 - data.dist) * 3;
+
+            if(data.y < 0) {
+                pixel[0] = 160;
+                pixel[1] = 160;
+                pixel[2] = 160;
+            }
+
+            return pixel;
+        },
+        function callback(xPos, yPos, sourceInfo) {
+            var shadowLength = 8;
+
+            if(sourceInfo.get(xPos, yPos)[3] > 0)
+                return false;
+
+            var d;
+            for(var sL = 1; sL < shadowLength; sL++) {
+                for(var yMulti = -1; yMulti < 2; yMulti++) {
+                    if(yMulti === 0)
+                        continue;
+
+                    var yp = yPos + sL * yMulti;
+                    var xp = xPos + sL * 0;
+
+                    if(yp > size)
+                        yp -= size;
+                    else if(yp < 0)
+                        yp += size;
+
+                    d = sourceInfo.get(xp, yp);
+                    if(d[3] > 0)
+                        return { dist: sL, y: yMulti };
+                }
+            }
+
+            return false;
+        });
+    //TODO: remove cache hack
+    data.surface = surf;
+    return surf;
+}
+
+module.exports = function(onchange) {
+    var div = document.createElement('div');
+    div.className = 'control';
+    div.innerHTML = 'Shadow';
+
+    div.appendChild(layerControl());
+
+    return { div: div, listeners: {}, render: render, surface: null };
+};
+;var SurfaceFactory = require('../SurfaceFactory');
+var text = require('./component/textInput');
+function render(data) {
+    var args = data.listeners;
+    var surf = SurfaceFactory.solid(data.surface, [64, 64], args.color.value());
+    //TODO: remove cache hack
+    data.surface = surf;
+    return surf;
+}
+
+module.exports = function(onchange, layerControl) {
+    var div = document.createElement('div');
+    div.className = 'control';
+    div.innerHTML = 'Solid';
+
+    var listeners = {
+        color: {}
+    };
+
+    var colorWrapper = text(listeners.color, onchange, 'Color: ', '#FFF');
+
+    var out = { div: div, listeners: listeners, render: render, surface: null };
+
+    div.appendChild(layerControl(out));
+    div.appendChild(colorWrapper);
+
+    return out;
+};
+
+;var text = require('./component/textInput');
+var number = require('./component/numberInput');
+var SurfaceFactory = require('../SurfaceFactory');
+
+function render(data) {
+    var args = data.listeners;
+    var surf = SurfaceFactory.voronoi(data.surface,
+        [64, 64], {
+            seed: args.seed.value(),
+            lineWidth: args.width.value(),
+            lineColor: args.color.value(),
+            points: args.points.value()
+        });
+
+    //TODO: remove cache hack
+    data.surface = surf;
+    return surf;
+}
+
+module.exports = function(onchange, layerControl) {
+    var div = document.createElement('div');
+    div.className = 'control';
+    div.innerHTML = 'Voronoi';
+
+    var listeners = {
+        seed: {},
+        width: {},
+        color: {},
+        points: {}
+    };
+
+    var seedWrapper = text(listeners.seed, onchange, 'Seed: ', '1');
+
+    var widthWrapper = number(listeners.width, onchange, 'Width: ', 1, 1);
+
+    var colorWrapper = text(listeners.color, onchange, 'Color: ', '#000');
+
+    var pointsWrapper = number(listeners.points, onchange, 'Cells: ', 10, 1);
+
+    var obj = { div: div, listeners: listeners, render: render, surface: null };
+
+    div.appendChild(layerControl(obj));
+    div.appendChild(seedWrapper);
+    div.appendChild(widthWrapper);
+    div.appendChild(colorWrapper);
+    div.appendChild(pointsWrapper);
+
+    return obj;
+};
+;function move(menu, binder) {
     var pos = [0, 0];
     var x, y;
     var maxX, maxY;
@@ -572,10 +980,14 @@ module.exports = function menu() {
     return newMenu;
 };
 ;module.exports = [];;var gamejs = require('gamejs');
-var SurfaceFactory = require('./src/SurfaceFactory');
 var menuBuilder = require('./src/menuBuilder');
 
-var backgroundLayer = require('./src/layers/background');
+var solidLayer = require('./src/layers/solid');
+var noiseLayer = require('./src/layers/noise');
+var voronoiLayer = require('./src/layers/voronoi');
+var shadowLayer = require('./src/layers/shadow');
+
+var layerControl = require('./src/layers/control');
 
 //Preload image and sound assets
 gamejs.preload(require('./src/images'));
@@ -586,13 +998,44 @@ var wrapper;
 var menu;
 var menuCanvasContext;
 var surface;
-var draw = true;
-var fetch = true;
-var listeners = {};
+
+var layers = [];
+
+function onchange(e) {
+    e.preventDefault();
+    function runHandle(listeners) {
+        for(var l in listeners) {
+            if(listeners[l] instanceof Object && !(listeners[l] instanceof Function)) {
+                runHandle(listeners[l]);
+            }
+            else if(listeners[l] instanceof Function && l === 'handle') {
+                listeners[l]();
+            }
+        }
+    }
+
+    for(var l in layers)
+        runHandle(layers[l].listeners);
+
+    surface = renderSurface(surface, layers);
+}
 
 function buildMenu() {
+    var layerOptions = [
+        { name: 'Noise', layer: noiseLayer },
+        { name: 'Solid', layer: solidLayer },
+        { name: 'Voronoi', layer: voronoiLayer }
+    ];
+
     var menu = menuBuilder([700, 522], 'metal');
     var menuCenter = menu.children[4];
+
+    var controlDiv = (function() {
+        var div = document.createElement('div');
+        div.className = 'controls';
+
+        return div;
+    })();
 
     var leftDiv = (function() {
         var div = document.createElement('div');
@@ -634,10 +1077,8 @@ function buildMenu() {
                         return option;
                     }
 
-                    select.appendChild(createOption('solid', 0));
-                    select.appendChild(createOption('noise', 1));
-                    select.appendChild(createOption('voronoi', 2));
-                    select.appendChild(createOption('shadow', 3));
+                    for(var l in layerOptions)
+                        select.appendChild(createOption(layerOptions[l].name, l));
 
                     return select;
                 })();
@@ -647,6 +1088,14 @@ function buildMenu() {
                     button.type = 'button';
                     button.value = '+';
                     button.style.float = 'right';
+
+                    button.onclick = function(e) {
+                        var t = layerOptions[type.value];
+                        var lay = t.layer(onchange, layerControl(layers, controlDiv, onchange));
+                        layers.push(lay);
+                        controlDiv.appendChild(lay.div);
+                        onchange(e);
+                    };
 
                     return button;
                 })();
@@ -669,486 +1118,6 @@ function buildMenu() {
         return div;
     })();
 
-    var controlDiv = (function(listeners) {
-        var div = document.createElement('div');
-        div.className = 'controls';
-
-        listeners.layer = {};
-
-        function onchange(e) {
-            e.preventDefault();
-            function runHandle(listeners) {
-                for(var l in listeners) {
-                    if(listeners[l] instanceof Object)
-                        runHandle(listners[l]);
-                    else if(listeners[l] instanceof Function && l === 'handle')
-                        listeners[l]();
-                }
-            }
-            surface = renderSurface(surface, listeners);
-        }
-
-        listeners.background = {};
-        listeners.noise = {};
-        listeners.voronoi = {};
-        listeners.shadow = {};
-
-        var layerControl = function() {
-            var div = document.createElement('div');
-            div.className = 'menu-controls';
-
-            var close = (function() {
-                var button = document.createElement('input');
-                button.input = 'button';
-                button.className = 'close';
-
-                return button;
-            })();
-
-            var up = (function() {
-                var button = document.createElement('input');
-                button.input = 'button';
-                button.className = 'up-arrow';
-
-                return button;
-            })();
-
-            var down = (function() {
-                var button = document.createElement('input');
-                button.input = 'button';
-                button.className = 'down-arrow';
-
-                return button;
-            })();
-
-            div.appendChild(close);
-            div.appendChild(up);
-            div.appendChild(down);
-
-            return div;
-        };
-
-        var backgroundDiv = backgroundLayer.dataGUI(listeners.background);
-
-        var noiseDiv = (function(listeners) {
-            var div = document.createElement('div');
-            div.className = 'control';
-            div.innerHTML = 'Noise';
-
-            listeners.seed = {};
-            listeners.red = {};
-            listeners.green = {};
-            listeners.blue = {};
-            listeners.alpha = {};
-
-            var seedWrapper = (function(listeners) {
-                var wrapper = document.createElement('div');
-                wrapper.innerHTML = 'Seed: ';
-
-                var seed = (function(listeners) {
-                    var text = document.createElement('input');
-                    text.type = 'text';
-                    text.value = '1';
-                    text.onchange = onchange;
-
-                    listeners.value = function() {
-                        return text.value;
-                    };
-
-                    return text;
-                })(listeners);
-
-                wrapper.appendChild(seed);
-
-                return wrapper;
-            })(listeners.seed);
-
-            var redWrapper = (function(listeners) {
-                var wrapper = document.createElement('div');
-                wrapper.innerHTML = 'Red: ';
-
-                listeners.min = {};
-                listeners.max = {};
-
-                var min = (function(listeners) {
-                    var number = document.createElement('input');
-                    number.type = 'number';
-                    number.value = 0;
-                    number.onchange = onchange;
-
-                    listeners.value = function() {
-                        return Number.parseInt(number.value);
-                    };
-
-                    listeners.handle = function() {
-                        console.log('asd');
-                        if(number.value < 0)
-                            number.value = 0;
-                    };
-
-                    return number;
-                })(listeners.min);
-
-                var max = (function(listeners) {
-                    var number = document.createElement('input');
-                    number.type = 'number';
-                    number.value = 32;
-                    number.onchange = onchange;
-
-                    listeners.value = function() {
-                        return Number.parseInt(number.value);
-                    };
-
-                    listeners.handle = function() {
-                        if(number.value > 255)
-                            number.value = 32;
-                    };
-
-                    return number;
-                })(listeners.max);
-
-                var arrow = (function() {
-                    var text = document.createElement('span');
-                    text.innerHTML = '-';
-
-                    return text;
-                })();
-
-                listeners.handle = function() {
-                    if(min.value > max.value)
-                        min.value = max.value;
-                };
-
-                wrapper.appendChild(min);
-                wrapper.appendChild(arrow);
-                wrapper.appendChild(max);
-
-                return wrapper;
-            })(listeners.red);
-            var greenWrapper = (function(listeners) {
-                var wrapper = document.createElement('div');
-                wrapper.innerHTML = 'Green: ';
-
-                listeners.min = {};
-                listeners.max = {};
-
-                var min = (function(listeners) {
-                    var number = document.createElement('input');
-                    number.type = 'number';
-                    number.value = 0;
-                    number.onchange = onchange;
-
-                    listeners.value = function() {
-                        return Number.parseInt(number.value);
-                    };
-
-                    listeners.handle = function() {
-                        if(number.value < 0)
-                            number.value = 0;
-                    };
-
-                    return number;
-                })(listeners.min);
-
-                var max = (function(listeners) {
-                    var number = document.createElement('input');
-                    number.type = 'number';
-                    number.value = 32;
-                    number.onchange = onchange;
-
-                    listeners.value = function() {
-                        return Number.parseInt(number.value);
-                    };
-
-                    listeners.handle = function() {
-                        if(number.value > 255)
-                            number.value = 255;
-                    };
-
-                    return number;
-                })(listeners.max);
-
-                var arrow = (function() {
-                    var text = document.createElement('span');
-                    text.innerHTML = '-';
-
-                    return text;
-                })();
-
-                listeners.handle = function() {
-                    if(min.value > max.value)
-                        min.value = max.value;
-                };
-
-                wrapper.appendChild(min);
-                wrapper.appendChild(arrow);
-                wrapper.appendChild(max);
-
-                return wrapper;
-            })(listeners.green);
-            var blueWrapper = (function(listeners) {
-                var wrapper = document.createElement('div');
-                wrapper.innerHTML = 'Blue: ';
-
-                listeners.min = {};
-                listeners.max = {};
-
-                var min = (function(listeners) {
-                    var number = document.createElement('input');
-                    number.type = 'number';
-                    number.value = 0;
-                    number.onchange = onchange;
-
-                    listeners.value = function() {
-                        return Number.parseInt(number.value);
-                    };
-
-                    listeners.handle = function() {
-                        if(number.value < 0)
-                            number.value = 0;
-                    };
-
-                    return number;
-                })(listeners.min);
-
-                var max = (function(listeners) {
-                    var number = document.createElement('input');
-                    number.type = 'number';
-                    number.value = 32;
-                    number.onchange = onchange;
-
-                    listeners.value = function() {
-                        return Number.parseInt(number.value);
-                    };
-
-                    listeners.handle = function() {
-                        if(number.value > 255)
-                            number.value = 255;
-                    };
-
-                    return number;
-                })(listeners.max);
-
-                var arrow = (function() {
-                    var text = document.createElement('span');
-                    text.innerHTML = '-';
-
-                    return text;
-                })();
-
-                listeners.handle = function() {
-                    if(min.value > max.value)
-                        min.value = max.value;
-                };
-
-                wrapper.appendChild(min);
-                wrapper.appendChild(arrow);
-                wrapper.appendChild(max);
-
-                return wrapper;
-            })(listeners.blue);
-            var alphaWrapper = (function(listeners) {
-                var wrapper = document.createElement('div');
-                wrapper.innerHTML = 'Alpha: ';
-
-                listeners.min = {};
-                listeners.max = {};
-
-                var min = (function(listeners) {
-                    var number = document.createElement('input');
-                    number.type = 'number';
-                    number.value = 0;
-                    number.onchange = onchange;
-
-                    listeners.value = function() {
-                        return Number.parseInt(number.value);
-                    };
-
-                    listeners.handle = function() {
-                        if(number.value < 0)
-                            number.value = 0;
-                    };
-
-                    return number;
-                })(listeners.min);
-
-                var max = (function(listeners) {
-                    var number = document.createElement('input');
-                    number.type = 'number';
-                    number.value = 120;
-                    number.onchange = onchange;
-
-                    listeners.value = function() {
-                        return Number.parseInt(number.value);
-                    };
-
-                    listeners.handle = function() {
-                        if(number.value > 255)
-                            number.value = 255;
-                    };
-
-                    return number;
-                })(listeners.max);
-
-                var arrow = (function() {
-                    var text = document.createElement('span');
-                    text.innerHTML = '-';
-
-                    return text;
-                })();
-
-                listeners.handle = function() {
-                    if(min.value > max.value)
-                        min.value = max.value;
-                };
-
-                wrapper.appendChild(min);
-                wrapper.appendChild(arrow);
-                wrapper.appendChild(max);
-
-                return wrapper;
-            })(listeners.alpha);
-
-            div.appendChild(layerControl());
-            div.appendChild(seedWrapper);
-            div.appendChild(redWrapper);
-            div.appendChild(greenWrapper);
-            div.appendChild(blueWrapper);
-            div.appendChild(alphaWrapper);
-
-            return div;
-        })(listeners.noise);
-
-        var voronoiDiv = (function(listeners) {
-            var div = document.createElement('div');
-            div.className = 'control';
-            div.innerHTML = 'Voronoi';
-
-            listeners.seed = {};
-            listeners.width = {};
-            listeners.color = {};
-            listeners.points = {};
-
-            var seedWrapper = (function(listeners) {
-                var wrapper = document.createElement('div');
-                wrapper.innerHTML = 'Seed: ';
-
-                var seed = (function(listeners) {
-                    var text = document.createElement('input');
-                    text.type = 'text';
-                    text.value = '1';
-                    text.onchange = onchange;
-
-                    listeners.value = function() {
-                        return text.value;
-                    };
-
-                    return text;
-                })(listeners);
-
-                wrapper.appendChild(seed);
-
-                return wrapper;
-            })(listeners.seed);
-
-            var widthWrapper = (function(listeners) {
-                var wrapper = document.createElement('div');
-                wrapper.innerHTML = 'Width: ';
-
-                var width = (function(listeners) {
-                    var text = document.createElement('input');
-                    text.type = 'number';
-                    text.value = '1';
-                    text.onchange = onchange;
-
-                    listeners.value = function() {
-                        return text.value;
-                    };
-
-                    return text;
-                })(listeners);
-
-                wrapper.appendChild(width);
-
-                return wrapper;
-            })(listeners.width);
-
-            var colorWrapper = (function(listeners) {
-                var wrapper = document.createElement('div');
-                wrapper.innerHTML = 'Color: ';
-
-                var color = (function(listeners) {
-                    var text = document.createElement('input');
-                    text.type = 'text';
-                    text.value = '#111';
-                    text.onchange = onchange;
-
-                    listeners.value = function() {
-                        return text.value;
-                    };
-
-                    return text;
-                })(listeners);
-
-                wrapper.appendChild(color);
-
-                return wrapper;
-            })(listeners.color);
-
-            var pointsWrapper = (function(listeners) {
-                var wrapper = document.createElement('div');
-                wrapper.innerHTML = 'Cells: ';
-
-                var points = (function(listeners) {
-                    var number = document.createElement('input');
-                    number.type = 'number';
-                    number.value = 10;
-                    number.onchange = onchange;
-
-                    listeners.value = function() {
-                        return Number.parseInt(number.value);
-                    };
-
-                    listeners.handle = function() {
-                        if(number.value < 1)
-                            number.value = 1;
-                    };
-
-                    return number;
-                })(listeners);
-
-                wrapper.appendChild(points);
-
-                return wrapper;
-            })(listeners.points);
-
-            div.appendChild(layerControl());
-            div.appendChild(seedWrapper);
-            div.appendChild(widthWrapper);
-            div.appendChild(colorWrapper);
-            div.appendChild(pointsWrapper);
-
-            return div;
-        })(listeners.voronoi);
-
-        var shadowDiv = (function(listeners) {
-            var div = document.createElement('div');
-            div.className = 'control';
-            div.innerHTML = 'Shadow';
-
-            div.appendChild(layerControl());
-
-            return div;
-        })(listeners.shadow);
-
-        div.appendChild(backgroundDiv);
-        div.appendChild(noiseDiv);
-        div.appendChild(voronoiDiv);
-        div.appendChild(shadowDiv);
-
-        return div;
-    })(listeners);
-
     menuCenter.appendChild(leftDiv);
     menuCenter.appendChild(controlDiv);
 
@@ -1159,87 +1128,16 @@ function renderSurface(mainSurface, surfaceArgs) {
     var surfaceLayers = [];
     var size = 64;
 
-    mainSurface = SurfaceFactory.solid([size, size]);
+    if(!mainSurface)
+        mainSurface = new gamejs.graphics.Surface([size, size]);
 
-    if(!surfaceArgs)
+    mainSurface.clear();
+
+    if(!surfaceArgs || surfaceArgs.length === 0)
         return mainSurface;
 
-    var backgroundSurface = (function(args) {
-        return SurfaceFactory.solid([size, size], args.color.value());
-    })(surfaceArgs.background);
-
-    var noiseSurface = (function(args) {
-        return SurfaceFactory.noise([size, size],
-            args.seed.value(),
-            [
-                args.red.min.value(),
-                args.green.min.value(),
-                args.blue.min.value(),
-                args.alpha.min.value()
-            ],
-            [
-                args.red.max.value(),
-                args.green.max.value(),
-                args.blue.max.value(),
-                args.alpha.max.value(),
-            ]);
-    })(surfaceArgs.noise);
-
-    var voronoiSurface = (function(args) {
-        return SurfaceFactory.voronoi([size, size], {
-            seed: args.seed.value(),
-            lineWidth: args.width.value(),
-            lineColor: args.color.value(),
-            points: args.points.value()
-        });
-    })(surfaceArgs.voronoi);
-
-    var shadowSurface = SurfaceFactory.relative(voronoiSurface,
-        function color(xPos, yPos, sourceInfo, data) {
-            var pixel = sourceInfo.get(xPos, yPos);
-            pixel[3] += (12 - data.dist) * 3;
-
-            if(data.y < 0) {
-                pixel[0] = 160;
-                pixel[1] = 160;
-                pixel[2] = 160;
-            }
-
-            return pixel;
-        },
-        function callback(xPos, yPos, sourceInfo) {
-            var shadowLength = 8;
-
-            if(sourceInfo.get(xPos, yPos)[3] > 0)
-                return false;
-
-            var d;
-            for(var sL = 1; sL < shadowLength; sL++) {
-                for(var yMulti = -1; yMulti < 2; yMulti++) {
-                    if(yMulti === 0)
-                        continue;
-
-                    var yp = yPos + sL * yMulti;
-                    var xp = xPos + sL * 0;
-
-                    if(yp > size)
-                        yp -= size;
-                    else if(yp < 0)
-                        yp += size;
-
-                    d = sourceInfo.get(xp, yp);
-                    if(d[3] > 0)
-                        return { dist: sL, y: yMulti };
-                }
-            }
-
-            return false;
-        });
-
-    surfaceLayers.push(backgroundSurface);
-    surfaceLayers.push(noiseSurface);
-    surfaceLayers.push(voronoiSurface);
-    surfaceLayers.push(shadowSurface);
+    for(var l in layers)
+        surfaceLayers.push(surfaceArgs[l].render(surfaceArgs[l], surfaceArgs));
 
     for(var surf in surfaceLayers)
         mainSurface.blit(surfaceLayers[surf]);
@@ -1281,7 +1179,7 @@ gamejs.onTick(function() {
     }
 
     if(!surface)
-        surface = renderSurface(surface, listeners);
+        surface = renderSurface(surface, layers);
 
     if(!wrapper) {
         wrapper = document.getElementById('gjs-canvas-wrapper');

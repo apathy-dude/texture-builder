@@ -53,7 +53,7 @@ module.exports = function(layers, menu, onchange) {
                     menu.insertBefore(menu.childNodes[l+1], menu.childNodes[l]);
                     onchange(e);
                 }
-            }
+            };
 
             return button;
         })();
