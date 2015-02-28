@@ -9,6 +9,8 @@ var shadowLayer = require('./src/layers/shadow');
 
 var layerControl = require('./src/layers/component/control');
 
+var layerOptions = require('./src/layers');
+
 //Preload image and sound assets
 gamejs.preload(require('./src/images'));
 
@@ -41,11 +43,6 @@ function onchange(e) {
 }
 
 function buildMenu() {
-    var layerOptions = [
-        { name: 'Noise', layer: noiseLayer },
-        { name: 'Solid', layer: solidLayer },
-        { name: 'Voronoi', layer: voronoiLayer }
-    ];
 
     var menu = menuBuilder([700, 522], 'metal');
     var menuCenter = menu.children[4];
@@ -209,7 +206,7 @@ gamejs.onTick(function() {
     render(surface);
 });
 
-},{"./src/images":52,"./src/layers/component/control":53,"./src/layers/noise":57,"./src/layers/shadow":58,"./src/layers/solid":59,"./src/layers/voronoi":60,"./src/menuBuilder":61,"gamejs":2}],2:[function(require,module,exports){
+},{"./src/images":52,"./src/layers":53,"./src/layers/component/control":54,"./src/layers/noise":58,"./src/layers/shadow":59,"./src/layers/solid":60,"./src/layers/voronoi":61,"./src/menuBuilder":62,"gamejs":2}],2:[function(require,module,exports){
 var matrix = require('./gamejs/math/matrix');
 var objects = require('./gamejs/utils/objects');
 var Callback = require('./gamejs/utils/callback').Callback;
@@ -8288,6 +8285,8 @@ module.exports = {
 },{"gamejs":2,"voronoi-diagram":50}],52:[function(require,module,exports){
 module.exports = ["images/cursor_pointerFlat_shadow.png","images/grey_arrowDownGrey.png","images/grey_arrow_down.png","images/grey_arrow_up.png","images/menus/glass/center.png","images/menus/glass/corner-cut.png","images/menus/glass/corner-round.png","images/menus/glass/horizontal.png","images/menus/glass/vertical.png","images/menus/metal/center.png","images/menus/metal/corner.png","images/menus/metal/horizontal.png","images/menus/metal/red/half/split.png","images/menus/metal/red/top-left.png","images/menus/metal/red/top-right.png","images/menus/metal/red/top.png","images/menus/metal/vertical.png","images/red_x.png"];
 },{}],53:[function(require,module,exports){
+module.exports = [{ name: "noise", layer: require("./layers/noise") },{ name: "shadow", layer: require("./layers/shadow") },{ name: "solid", layer: require("./layers/solid") },{ name: "voronoi", layer: require("./layers/voronoi") }];
+},{"./layers/noise":58,"./layers/shadow":59,"./layers/solid":60,"./layers/voronoi":61}],54:[function(require,module,exports){
 module.exports = function(layers, menu, onchange) {
     return function(layer) {
         var div = document.createElement('div');
@@ -8357,7 +8356,7 @@ module.exports = function(layers, menu, onchange) {
 };
 
 
-},{}],54:[function(require,module,exports){
+},{}],55:[function(require,module,exports){
 module.exports = function(listeners, onchange, label, def, min, max) {
     var wrapper = document.createElement('div');
     wrapper.innerHTML = label;
@@ -8393,7 +8392,7 @@ module.exports = function(listeners, onchange, label, def, min, max) {
     return wrapper;
 };
 
-},{}],55:[function(require,module,exports){
+},{}],56:[function(require,module,exports){
 module.exports = function(listeners, onchange, label, minVal, maxVal) {
     var wrapper = document.createElement('div');
     wrapper.innerHTML = label;
@@ -8457,7 +8456,7 @@ module.exports = function(listeners, onchange, label, minVal, maxVal) {
 };
 
 
-},{}],56:[function(require,module,exports){
+},{}],57:[function(require,module,exports){
 module.exports = function(listeners, onchange, label, def) {
     var wrapper = document.createElement('div');
     wrapper.innerHTML = label;
@@ -8481,7 +8480,7 @@ module.exports = function(listeners, onchange, label, def) {
     return wrapper;
 };
 
-},{}],57:[function(require,module,exports){
+},{}],58:[function(require,module,exports){
 var text = require('./component/textInput');
 var numberRange = require('./component/numberRangeInput');
 var SurfaceFactory = require('../SurfaceFactory');
@@ -8540,7 +8539,7 @@ module.exports = function(onchange, layerControl) {
     return obj;
 };
 
-},{"../SurfaceFactory":51,"./component/numberRangeInput":55,"./component/textInput":56}],58:[function(require,module,exports){
+},{"../SurfaceFactory":51,"./component/numberRangeInput":56,"./component/textInput":57}],59:[function(require,module,exports){
 var layerControl = require('./component/control');
 var SurfaceFactory = require('../SurfaceFactory');
 
@@ -8603,7 +8602,7 @@ module.exports = function(onchange) {
     return { div: div, listeners: {}, render: render, surface: null };
 };
 
-},{"../SurfaceFactory":51,"./component/control":53}],59:[function(require,module,exports){
+},{"../SurfaceFactory":51,"./component/control":54}],60:[function(require,module,exports){
 var SurfaceFactory = require('../SurfaceFactory');
 var text = require('./component/textInput');
 function render(data) {
@@ -8634,7 +8633,7 @@ module.exports = function(onchange, layerControl) {
 };
 
 
-},{"../SurfaceFactory":51,"./component/textInput":56}],60:[function(require,module,exports){
+},{"../SurfaceFactory":51,"./component/textInput":57}],61:[function(require,module,exports){
 var text = require('./component/textInput');
 var number = require('./component/numberInput');
 var SurfaceFactory = require('../SurfaceFactory');
@@ -8685,7 +8684,7 @@ module.exports = function(onchange, layerControl) {
     return obj;
 };
 
-},{"../SurfaceFactory":51,"./component/numberInput":54,"./component/textInput":56}],61:[function(require,module,exports){
+},{"../SurfaceFactory":51,"./component/numberInput":55,"./component/textInput":57}],62:[function(require,module,exports){
 function move(menu, binder) {
     var pos = [0, 0];
     var x, y;
@@ -8881,6 +8880,6 @@ module.exports = function menu() {
     return newMenu;
 };
 
-},{}],62:[function(require,module,exports){
+},{}],63:[function(require,module,exports){
 module.exports = [];
-},{}]},{},[51,52,53,54,55,56,57,58,59,60,61,62,1]);
+},{}]},{},[51,52,53,54,55,56,57,58,59,60,61,62,63,1]);

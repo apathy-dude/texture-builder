@@ -1,0 +1,1 @@
+module.exports = [{ name: "noise", layer: require("./layers/noise") },{ name: "shadow", layer: require("./layers/shadow") },{ name: "solid", layer: require("./layers/solid") },{ name: "voronoi", layer: require("./layers/voronoi") }];

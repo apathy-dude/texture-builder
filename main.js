@@ -8,6 +8,8 @@ var shadowLayer = require('./src/layers/shadow');
 
 var layerControl = require('./src/layers/component/control');
 
+var layerOptions = require('./src/layers');
+
 //Preload image and sound assets
 gamejs.preload(require('./src/images'));
 
@@ -40,11 +42,6 @@ function onchange(e) {
 }
 
 function buildMenu() {
-    var layerOptions = [
-        { name: 'Noise', layer: noiseLayer },
-        { name: 'Solid', layer: solidLayer },
-        { name: 'Voronoi', layer: voronoiLayer }
-    ];
 
     var menu = menuBuilder([700, 522], 'metal');
     var menuCenter = menu.children[4];

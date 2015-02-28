@@ -31,7 +31,7 @@ module.exports = function(grunt) {
         },
         watch: {
             toArray: {
-                files: ['images/**/*.png'],
+                files: ['images/**/*.png', 'src/layers/*.js'],
                 tasks: ['toArray']
             }
         },
@@ -51,6 +51,15 @@ module.exports = function(grunt) {
                 files: {
                     'src/menus.js': ['images/menu/*']
                 }
+            },
+            layers: {
+                options: {
+                    getFiles: true,
+                    require: true,
+                },
+                files: {
+                    'src/layers.js': ['src/layers/*.js']
+                }
             }
         }
     });
@@ -66,6 +75,8 @@ module.exports = function(grunt) {
 
         var options = this.options();
 
+        var layers = this.target === 'layers';
+
         this.files.forEach(function(file) {
             file.src.filter(function(filepath) {
                 if(options.getFiles && options.getFolders)
@@ -75,7 +86,20 @@ module.exports = function(grunt) {
 
                 return (options.getFiles && isFile) || (options.getFolders && !isFile);
             }).map(function(filepath) {
-                data.push('"' + filepath + '"');
+                //TODO: Find better way to handle layer list
+                if(layers) {
+                    var label = filepath.split('/');
+                    label = label[label.length - 1].split('.')[0];
+                    var loc = filepath.split('.');
+                    loc.pop();
+                    loc = loc[0].split('/');
+                    loc = './' + loc[1] + '/' + loc[2];
+
+                    data.push('{ name: "' + label + '", layer: require("' + loc + '") }');
+                }
+                else {
+                    data.push('"' + filepath + '"');
+                }
 
                 grunt.log.ok(filepath);
             });
