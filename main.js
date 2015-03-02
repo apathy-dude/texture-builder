@@ -12,8 +12,12 @@ var BORDER_WIDTH = 1;
 
 var wrapper;
 var menu;
+var menu2;
 var menuCanvasContext;
 var surface;
+
+var anch = false;
+var ready = false;
 
 var layers = [];
 
@@ -40,6 +44,7 @@ function buildMenu() {
 
     var menu = menuBuilder([700, 522], 'metal');
     var menuCenter = menu.children[4];
+    menu.id = 'menu';
 
     var controlDiv = (function() {
         var div = document.createElement('div');
@@ -182,6 +187,8 @@ gamejs.ready(function() {
 
     //gamejs.display.setMode([width, height], gamejs.display.FULLSCREEN);
     gamejs.display.setMode([width, height]);
+
+    ready = true;
 });
 
 gamejs.onTick(function() {
@@ -189,13 +196,57 @@ gamejs.onTick(function() {
         menu = buildMenu();
     }
 
+    if(!menu2) {
+        menu2 = menuBuilder([200, 200], 'metal');
+        menu2.id = 'menu2';
+    }
+
     if(!surface)
         surface = renderSurface(surface, layers);
 
+
     if(!wrapper) {
         wrapper = document.getElementById('gjs-canvas-wrapper');
+
         wrapper.appendChild(menu);
+        //wrapper.appendChild(menu2);
     }
 
     render(surface);
+
+    if(!anch && ready) {
+        jsPlumb.bind('ready', function() {
+            var instance = jsPlumb.getInstance({
+                Endpoint: [ 'Dot', { radius: 4 }],
+                HoverPaintStyle: { strokeStyle: '#1e8151', lineWidth: 2 },
+                ConnectionOverlays: [
+                    [ 'Arrow', {
+                        location: 1,
+                        id: 'arrow',
+                        length: 14,
+                        foldback: 0.8
+                    }],
+                ],
+                Container: 'wrapper'
+            });
+            
+            var menus = jsPlumb.getSelector('.menu');
+
+            //instance.draggable(menus);
+
+            instance.bind('click', function(conn) {
+                //instance.detach(conn);
+            });
+
+            instance.bind('connection', function(info) {
+            });
+
+            instance.bind('beforeDetach', function(conn) {
+            });
+
+        });
+
+        anch = true;
+    }
+
 });

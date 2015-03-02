@@ -1,0 +1,21 @@
+{
+  "name": "texture-builder",
+  "version": "0.0.0",
+  "homepage": "https://github.com/apathy-dude/texture-builder",
+  "authors": [
+    "Thomas Brown <flaron1990@hotmail.com>"
+  ],
+  "main": "main.js",
+  "license": "Unlicence",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jsplumb": "~1.7.3"
+  }
+}
