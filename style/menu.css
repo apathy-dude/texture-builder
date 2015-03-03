@@ -15,7 +15,7 @@
     position: absolute;
     width: 32px;
     height: 32px;
-    cursor: nw-resize;
+    /*cursor: nw-resize;*/
 }
 .menu .top {
     display: block;
@@ -23,7 +23,7 @@
     width: calc(100% - 64px);
     height: 32px;
     left: 32px;
-    cursor: grab;
+    /*cursor: grab;*/
 }
 .menu .top-right {
     display: block;
@@ -32,7 +32,7 @@
     height: 32px;
     right: 0px;
     transform:rotate(90deg);
-    cursor: ne-resize;
+    /*cursor: ne-resize;*/
 }
 .menu .left {
     display: block;
@@ -40,7 +40,7 @@
     width: 32px;
     height: calc(100% - 64px);
     top: 32px;
-    cursor: w-resize;
+    /*cursor: w-resize;*/
 }
 .menu .center {
     display: block;
@@ -59,7 +59,7 @@
     top: 32px;
     left: calc(100% - 32px);
     transform:rotate(180deg);
-    cursor: e-resize;
+    /*cursor: e-resize;*/
 }
 .menu .bottom-left {
     display: block;
@@ -68,7 +68,7 @@
     height: 32px;
     bottom: 0px;
     transform:rotate(-90deg);
-    cursor: sw-resize;
+    /*cursor: sw-resize;*/
 }
 .menu .bottom {
     display: block;
@@ -78,7 +78,7 @@
     bottom: 0px;
     left: 32px;
     transform:rotate(180deg);
-    cursor: s-resize;
+    /*cursor: s-resize;*/
 }
 .menu .bottom-right {
     display: block;
@@ -88,7 +88,7 @@
     bottom: 0px;
     right: 0px;
     transform:rotate(180deg);
-    cursor: se-resize;
+    i/*cursor: se-resize;*/
 }
 
 .menu.glass .corner1, .menu.glass .corner {

@@ -1,11 +1,8 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 var gamejs = require('gamejs');
 var menuBuilder = require('./src/menuBuilder');
-
-var solidLayer = require('./src/layers/solid');
-var noiseLayer = require('./src/layers/noise');
-var voronoiLayer = require('./src/layers/voronoi');
-var shadowLayer = require('./src/layers/shadow');
+var plumb = require('./src/jsPlumbInstance');
+var conn = require('./src/connectors');
 
 var layerControl = require('./src/layers/component/control');
 
@@ -20,6 +17,9 @@ var wrapper;
 var menu;
 var menuCanvasContext;
 var surface;
+
+var anch = false;
+var ready = false;
 
 var layers = [];
 
@@ -44,13 +44,13 @@ function onchange(e) {
 
 function buildMenu() {
 
-    var menu = menuBuilder([700, 522], 'metal');
+    var menu = menuBuilder([328, 522], 'metal');
     var menuCenter = menu.children[4];
+    menu.id = 'menu';
 
     var controlDiv = (function() {
         var div = document.createElement('div');
         div.className = 'controls';
-
         return div;
     })();
 
@@ -110,7 +110,9 @@ function buildMenu() {
                         var t = layerOptions[type.value];
                         var lay = t.layer(onchange, layerControl(layers, controlDiv, onchange));
                         layers.push(lay);
-                        controlDiv.appendChild(lay.div);
+
+                        wrapper.appendChild(lay.div);
+                        plumb.repaintEverything(); //TODO: find way to only update source
                         onchange(e);
                     };
 
@@ -136,7 +138,7 @@ function buildMenu() {
     })();
 
     menuCenter.appendChild(leftDiv);
-    menuCenter.appendChild(controlDiv);
+    //menuCenter.appendChild(controlDiv);
 
     return menu;
 }
@@ -188,6 +190,8 @@ gamejs.ready(function() {
 
     //gamejs.display.setMode([width, height], gamejs.display.FULLSCREEN);
     gamejs.display.setMode([width, height]);
+
+    ready = true;
 });
 
 gamejs.onTick(function() {
@@ -198,15 +202,40 @@ gamejs.onTick(function() {
     if(!surface)
         surface = renderSurface(surface, layers);
 
+
     if(!wrapper) {
         wrapper = document.getElementById('gjs-canvas-wrapper');
+
         wrapper.appendChild(menu);
     }
 
     render(surface);
+
+    if(!anch && ready) {
+        jsPlumb.bind('ready', function() {
+            var menus = jsPlumb.getSelector('.menu');
+
+            plumb.addEndpoint('menu', conn.target, conn.targetMid);
+
+            plumb.bind('click', function(conn) {
+                plumb.detach(conn);
+            });
+
+            plumb.bind('connection', function(info) {
+                console.log(info);
+            });
+
+            plumb.bind('beforeDetach', function(conn) {
+            });
+
+        });
+
+        anch = true;
+    }
+
 });
 
-},{"./src/images":52,"./src/layers":53,"./src/layers/component/control":54,"./src/layers/noise":58,"./src/layers/shadow":59,"./src/layers/solid":60,"./src/layers/voronoi":61,"./src/menuBuilder":62,"gamejs":2}],2:[function(require,module,exports){
+},{"./src/connectors":52,"./src/images":53,"./src/jsPlumbInstance":54,"./src/layers":55,"./src/layers/component/control":56,"./src/menuBuilder":64,"gamejs":2}],2:[function(require,module,exports){
 var matrix = require('./gamejs/math/matrix');
 var objects = require('./gamejs/utils/objects');
 var Callback = require('./gamejs/utils/callback').Callback;
@@ -1257,7 +1286,7 @@ var isFullScreen = exports.isFullscreen = function() {
  * @returns {Boolean} true if operation was successfull, false otherwise
  */
 var enableFullScreen = function(event) {
-   var wrapper = document.getElementById('gjs-canvas-wrapper');
+   var wrapper = getCanvas();
    wrapper.requestFullScreen = wrapper.requestFullScreen || wrapper.mozRequestFullScreen || wrapper.webkitRequestFullScreen;
    if (!wrapper.requestFullScreen) {
       return false;
@@ -1797,7 +1826,8 @@ exports.init = function() {
          key === exports.K_SPACE ||
          key === exports.K_TAB ||
          key === exports.K_ENTER)) ||
-         key === exports.K_ALT) {
+         key === exports.K_ALT ||
+         key === exports.K_BACKSPACE) {
         ev.preventDefault();
       }
    }
@@ -8283,10 +8313,45 @@ module.exports = {
 };
 
 },{"gamejs":2,"voronoi-diagram":50}],52:[function(require,module,exports){
-module.exports = ["images/cursor_pointerFlat_shadow.png","images/grey_arrowDownGrey.png","images/grey_arrow_down.png","images/grey_arrow_up.png","images/menus/glass/center.png","images/menus/glass/corner-cut.png","images/menus/glass/corner-round.png","images/menus/glass/horizontal.png","images/menus/glass/vertical.png","images/menus/metal/center.png","images/menus/metal/corner.png","images/menus/metal/horizontal.png","images/menus/metal/red/half/split.png","images/menus/metal/red/top-left.png","images/menus/metal/red/top-right.png","images/menus/metal/red/top.png","images/menus/metal/vertical.png","images/red_x.png"];
+module.exports = {
+    source: {
+        isSource: true,
+        maxConnections: -1,
+        endpoint: 'Dot',
+        anchor: 'Right'
+    },
+    target: {
+        isTarget: true,
+        endPoint: 'Dot'
+    },
+    targetTop: {
+        anchor: [ 0, 1/3, 0, 0 ]
+    },
+    targetBottom: {
+        anchor: [ 0, 2/3, 0, 0 ]
+    },
+    targetMid: {
+        anchor: 'Left'
+    }
+};
+
 },{}],53:[function(require,module,exports){
+module.exports = ["images/cursor_pointerFlat_shadow.png","images/grey_arrowDownGrey.png","images/grey_arrow_down.png","images/grey_arrow_up.png","images/menus/glass/center.png","images/menus/glass/corner-cut.png","images/menus/glass/corner-round.png","images/menus/glass/horizontal.png","images/menus/glass/vertical.png","images/menus/metal/center.png","images/menus/metal/corner.png","images/menus/metal/horizontal.png","images/menus/metal/red/half/split.png","images/menus/metal/red/top-left.png","images/menus/metal/red/top-right.png","images/menus/metal/red/top.png","images/menus/metal/vertical.png","images/red_x.png"];
+},{}],54:[function(require,module,exports){
+var instance = jsPlumb.getInstance({
+    Container: 'wrapper',
+    Connector: [ 'Bezier', { curviness: 1 } ],
+    Anchors: [ 'Right', [ 0, 0.5, 0, 1 ] ],
+    ConnectionOverlays: [
+        [ 'Arrow', { location: 1 } ]
+    ]
+});
+
+module.exports = instance;
+
+},{}],55:[function(require,module,exports){
 module.exports = [{ name: "noise", layer: require("./layers/noise") },{ name: "shadow", layer: require("./layers/shadow") },{ name: "solid", layer: require("./layers/solid") },{ name: "voronoi", layer: require("./layers/voronoi") }];
-},{"./layers/noise":58,"./layers/shadow":59,"./layers/solid":60,"./layers/voronoi":61}],54:[function(require,module,exports){
+},{"./layers/noise":60,"./layers/shadow":61,"./layers/solid":62,"./layers/voronoi":63}],56:[function(require,module,exports){
 module.exports = function(layers, menu, onchange) {
     return function(layer) {
         var div = document.createElement('div');
@@ -8301,45 +8366,7 @@ module.exports = function(layers, menu, onchange) {
                 var l = layers.indexOf(layer);
                 if(l > -1) {
                     layers.splice(l, 1);
-                    menu.removeChild(menu.childNodes[l]);
-                    onchange(e);
-                }
-            };
-
-            return button;
-        })();
-
-        var up = (function() {
-            var button = document.createElement('input');
-            button.input = 'button';
-            button.className = 'up-arrow';
-
-            button.onclick = function(e) {
-                var l = layers.indexOf(layer);
-                if(l > 0) {
-                    var tempLayer = layers[l-1];
-                    layers[l-1] = layers[l];
-                    layers[l] = tempLayer;
-                    menu.insertBefore(menu.childNodes[l], menu.childNodes[l-1]);
-                    onchange(e);
-                }
-            };
-
-            return button;
-        })();
-
-        var down = (function() {
-            var button = document.createElement('input');
-            button.input = 'button';
-            button.className = 'down-arrow';
-
-            button.onclick = function(e) {
-                var l = layers.indexOf(layer);
-                if(l > -1 && l < layers.length - 1) {
-                    var tempLayer = layers[l];
-                    layers[l] = layers[l+1];
-                    layers[l+1] = tempLayer;
-                    menu.insertBefore(menu.childNodes[l+1], menu.childNodes[l]);
+                    layer.div.parentElement.removeChild(layer.div);
                     onchange(e);
                 }
             };
@@ -8348,15 +8375,13 @@ module.exports = function(layers, menu, onchange) {
         })();
 
         div.appendChild(close);
-        div.appendChild(up);
-        div.appendChild(down);
 
         return div;
     };
 };
 
 
-},{}],55:[function(require,module,exports){
+},{}],57:[function(require,module,exports){
 module.exports = function(listeners, onchange, label, def, min, max) {
     var wrapper = document.createElement('div');
     wrapper.innerHTML = label;
@@ -8392,7 +8417,7 @@ module.exports = function(listeners, onchange, label, def, min, max) {
     return wrapper;
 };
 
-},{}],56:[function(require,module,exports){
+},{}],58:[function(require,module,exports){
 module.exports = function(listeners, onchange, label, minVal, maxVal) {
     var wrapper = document.createElement('div');
     wrapper.innerHTML = label;
@@ -8456,7 +8481,7 @@ module.exports = function(listeners, onchange, label, minVal, maxVal) {
 };
 
 
-},{}],57:[function(require,module,exports){
+},{}],59:[function(require,module,exports){
 module.exports = function(listeners, onchange, label, def) {
     var wrapper = document.createElement('div');
     wrapper.innerHTML = label;
@@ -8480,10 +8505,14 @@ module.exports = function(listeners, onchange, label, def) {
     return wrapper;
 };
 
-},{}],58:[function(require,module,exports){
+},{}],60:[function(require,module,exports){
+var SurfaceFactory = require('../SurfaceFactory');
+var menuBuilder = require('../menuBuilder');
 var text = require('./component/textInput');
 var numberRange = require('./component/numberRangeInput');
-var SurfaceFactory = require('../SurfaceFactory');
+var plumb = require('../jsPlumbInstance');
+var conn = require('../connectors');
+var guid = require('../util/guid');
 
 function render(data) {
     var args = data.listeners;
@@ -8508,8 +8537,9 @@ function render(data) {
 }
 
 module.exports = function(onchange, layerControl) {
-    var div = document.createElement('div');
-    div.className = 'control';
+    var menu = menuBuilder([350, 200], 'metal');
+    menu.id = guid();
+    var div = menu.children[4];
     div.innerHTML = 'Noise';
 
     var listeners = {
@@ -8527,19 +8557,21 @@ module.exports = function(onchange, layerControl) {
     var blueWrapper = numberRange(listeners.blue, onchange, 'Blue: ', 0, 255);
     var alphaWrapper = numberRange(listeners.alpha, onchange, 'Alpha: ', 0, 255);
 
-    var obj = { div: div, listeners: listeners, render: render };
+    var obj = { div: menu, listeners: listeners, render: render };
 
-    div.appendChild(layerControl(obj));
+    menu.children[2].appendChild(layerControl(obj));
     div.appendChild(seedWrapper);
     div.appendChild(redWrapper);
     div.appendChild(greenWrapper);
     div.appendChild(blueWrapper);
     div.appendChild(alphaWrapper);
 
+    plumb.addEndpoint(menu, conn.source);
+
     return obj;
 };
 
-},{"../SurfaceFactory":51,"./component/numberRangeInput":56,"./component/textInput":57}],59:[function(require,module,exports){
+},{"../SurfaceFactory":51,"../connectors":52,"../jsPlumbInstance":54,"../menuBuilder":64,"../util/guid":66,"./component/numberRangeInput":58,"./component/textInput":59}],61:[function(require,module,exports){
 var layerControl = require('./component/control');
 var SurfaceFactory = require('../SurfaceFactory');
 
@@ -8602,9 +8634,14 @@ module.exports = function(onchange) {
     return { div: div, listeners: {}, render: render, surface: null };
 };
 
-},{"../SurfaceFactory":51,"./component/control":54}],60:[function(require,module,exports){
+},{"../SurfaceFactory":51,"./component/control":56}],62:[function(require,module,exports){
 var SurfaceFactory = require('../SurfaceFactory');
+var menuBuilder = require('../menuBuilder');
 var text = require('./component/textInput');
+var plumb = require('../jsPlumbInstance');
+var conn = require('../connectors');
+var guid = require('../util/guid');
+
 function render(data) {
     var args = data.listeners;
     var surf = SurfaceFactory.solid(data.surface, [64, 64], args.color.value());
@@ -8614,8 +8651,9 @@ function render(data) {
 }
 
 module.exports = function(onchange, layerControl) {
-    var div = document.createElement('div');
-    div.className = 'control';
+    var menu = menuBuilder([350, 110], 'metal');
+    menu.id = guid();
+    var div = menu.children[4];
     div.innerHTML = 'Solid';
 
     var listeners = {
@@ -8624,19 +8662,25 @@ module.exports = function(onchange, layerControl) {
 
     var colorWrapper = text(listeners.color, onchange, 'Color: ', '#FFF');
 
-    var out = { div: div, listeners: listeners, render: render, surface: null };
+    var out = { div: menu, listeners: listeners, render: render, surface: null };
 
-    div.appendChild(layerControl(out));
+    menu.children[2].appendChild(layerControl(out));
     div.appendChild(colorWrapper);
+
+    plumb.addEndpoint(menu, conn.source);
 
     return out;
 };
 
 
-},{"../SurfaceFactory":51,"./component/textInput":57}],61:[function(require,module,exports){
+},{"../SurfaceFactory":51,"../connectors":52,"../jsPlumbInstance":54,"../menuBuilder":64,"../util/guid":66,"./component/textInput":59}],63:[function(require,module,exports){
+var SurfaceFactory = require('../SurfaceFactory');
+var menuBuilder = require('../menuBuilder');
 var text = require('./component/textInput');
 var number = require('./component/numberInput');
-var SurfaceFactory = require('../SurfaceFactory');
+var plumb = require('../jsPlumbInstance');
+var conn = require('../connectors');
+var guid = require('../util/guid');
 
 function render(data) {
     var args = data.listeners;
@@ -8654,8 +8698,9 @@ function render(data) {
 }
 
 module.exports = function(onchange, layerControl) {
-    var div = document.createElement('div');
-    div.className = 'control';
+    var menu = menuBuilder([350, 175], 'metal');
+    menu.id = guid();
+    var div = menu.children[4];
     div.innerHTML = 'Voronoi';
 
     var listeners = {
@@ -8673,18 +8718,22 @@ module.exports = function(onchange, layerControl) {
 
     var pointsWrapper = number(listeners.points, onchange, 'Cells: ', 10, 1);
 
-    var obj = { div: div, listeners: listeners, render: render, surface: null };
+    var obj = { div: menu, listeners: listeners, render: render, surface: null };
 
-    div.appendChild(layerControl(obj));
+    menu.children[2].appendChild(layerControl(obj));
     div.appendChild(seedWrapper);
     div.appendChild(widthWrapper);
     div.appendChild(colorWrapper);
     div.appendChild(pointsWrapper);
 
+    plumb.addEndpoint(menu, conn.source);
+
     return obj;
 };
 
-},{"../SurfaceFactory":51,"./component/numberInput":55,"./component/textInput":57}],62:[function(require,module,exports){
+},{"../SurfaceFactory":51,"../connectors":52,"../jsPlumbInstance":54,"../menuBuilder":64,"../util/guid":66,"./component/numberInput":57,"./component/textInput":59}],64:[function(require,module,exports){
+var plumb = require('./jsPlumbInstance');
+
 function move(menu, binder) {
     var pos = [0, 0];
     var x, y;
@@ -8710,6 +8759,8 @@ function move(menu, binder) {
             menu.style.top = '0px';
         else
             menu.style.top = maxY + 'px';
+
+        plumb.repaintEverything(); //TODO: set to this id
     }
 
     function onmouseup(e) {
@@ -8791,6 +8842,8 @@ function resize(menu, binder, type) {
 
         pos[0] = e.clientX;
         pos[1] = e.clientY;
+
+        plumb.repaintEverything(); //TODO: Set to this id
     }
 
     function onmouseup(e) {
@@ -8880,6 +8933,17 @@ module.exports = function menu() {
     return newMenu;
 };
 
-},{}],63:[function(require,module,exports){
+},{"./jsPlumbInstance":54}],65:[function(require,module,exports){
 module.exports = [];
-},{}]},{},[51,52,53,54,55,56,57,58,59,60,61,62,63,1]);
+},{}],66:[function(require,module,exports){
+function s4() {
+    return Math.floor((1 + Math.random()) * 0x10000)
+        .toString(16)
+        .substring(1);
+}
+
+module.exports = function guid() {
+    return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
+};
+
+},{}]},{},[51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,1]);

@@ -1,6 +1,10 @@
+var SurfaceFactory = require('../SurfaceFactory');
+var menuBuilder = require('../menuBuilder');
 var text = require('./component/textInput');
 var number = require('./component/numberInput');
-var SurfaceFactory = require('../SurfaceFactory');
+var plumb = require('../jsPlumbInstance');
+var conn = require('../connectors');
+var guid = require('../util/guid');
 
 function render(data) {
     var args = data.listeners;
@@ -18,8 +22,9 @@ function render(data) {
 }
 
 module.exports = function(onchange, layerControl) {
-    var div = document.createElement('div');
-    div.className = 'control';
+    var menu = menuBuilder([350, 175], 'metal');
+    menu.id = guid();
+    var div = menu.children[4];
     div.innerHTML = 'Voronoi';
 
     var listeners = {
@@ -37,13 +42,15 @@ module.exports = function(onchange, layerControl) {
 
     var pointsWrapper = number(listeners.points, onchange, 'Cells: ', 10, 1);
 
-    var obj = { div: div, listeners: listeners, render: render, surface: null };
+    var obj = { div: menu, listeners: listeners, render: render, surface: null };
 
-    div.appendChild(layerControl(obj));
+    menu.children[2].appendChild(layerControl(obj));
     div.appendChild(seedWrapper);
     div.appendChild(widthWrapper);
     div.appendChild(colorWrapper);
     div.appendChild(pointsWrapper);
+
+    plumb.addEndpoint(menu, conn.source);
 
     return obj;
 };

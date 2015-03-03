@@ -1,6 +1,10 @@
+var SurfaceFactory = require('../SurfaceFactory');
+var menuBuilder = require('../menuBuilder');
 var text = require('./component/textInput');
 var numberRange = require('./component/numberRangeInput');
-var SurfaceFactory = require('../SurfaceFactory');
+var plumb = require('../jsPlumbInstance');
+var conn = require('../connectors');
+var guid = require('../util/guid');
 
 function render(data) {
     var args = data.listeners;
@@ -25,8 +29,9 @@ function render(data) {
 }
 
 module.exports = function(onchange, layerControl) {
-    var div = document.createElement('div');
-    div.className = 'control';
+    var menu = menuBuilder([350, 200], 'metal');
+    menu.id = guid();
+    var div = menu.children[4];
     div.innerHTML = 'Noise';
 
     var listeners = {
@@ -44,14 +49,16 @@ module.exports = function(onchange, layerControl) {
     var blueWrapper = numberRange(listeners.blue, onchange, 'Blue: ', 0, 255);
     var alphaWrapper = numberRange(listeners.alpha, onchange, 'Alpha: ', 0, 255);
 
-    var obj = { div: div, listeners: listeners, render: render };
+    var obj = { div: menu, listeners: listeners, render: render };
 
-    div.appendChild(layerControl(obj));
+    menu.children[2].appendChild(layerControl(obj));
     div.appendChild(seedWrapper);
     div.appendChild(redWrapper);
     div.appendChild(greenWrapper);
     div.appendChild(blueWrapper);
     div.appendChild(alphaWrapper);
+
+    plumb.addEndpoint(menu, conn.source);
 
     return obj;
 };

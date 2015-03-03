@@ -1,3 +1,5 @@
+var plumb = require('./jsPlumbInstance');
+
 function move(menu, binder) {
     var pos = [0, 0];
     var x, y;
@@ -23,6 +25,8 @@ function move(menu, binder) {
             menu.style.top = '0px';
         else
             menu.style.top = maxY + 'px';
+
+        plumb.repaintEverything(); //TODO: set to this id
     }
 
     function onmouseup(e) {
@@ -104,6 +108,8 @@ function resize(menu, binder, type) {
 
         pos[0] = e.clientX;
         pos[1] = e.clientY;
+
+        plumb.repaintEverything(); //TODO: Set to this id
     }
 
     function onmouseup(e) {

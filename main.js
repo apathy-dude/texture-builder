@@ -1,5 +1,7 @@
 var gamejs = require('gamejs');
 var menuBuilder = require('./src/menuBuilder');
+var plumb = require('./src/jsPlumbInstance');
+var conn = require('./src/connectors');
 
 var layerControl = require('./src/layers/component/control');
 
@@ -12,7 +14,6 @@ var BORDER_WIDTH = 1;
 
 var wrapper;
 var menu;
-var menu2;
 var menuCanvasContext;
 var surface;
 
@@ -42,14 +43,13 @@ function onchange(e) {
 
 function buildMenu() {
 
-    var menu = menuBuilder([700, 522], 'metal');
+    var menu = menuBuilder([328, 522], 'metal');
     var menuCenter = menu.children[4];
     menu.id = 'menu';
 
     var controlDiv = (function() {
         var div = document.createElement('div');
         div.className = 'controls';
-
         return div;
     })();
 
@@ -109,7 +109,9 @@ function buildMenu() {
                         var t = layerOptions[type.value];
                         var lay = t.layer(onchange, layerControl(layers, controlDiv, onchange));
                         layers.push(lay);
-                        controlDiv.appendChild(lay.div);
+
+                        wrapper.appendChild(lay.div);
+                        plumb.repaintEverything(); //TODO: find way to only update source
                         onchange(e);
                     };
 
@@ -135,7 +137,7 @@ function buildMenu() {
     })();
 
     menuCenter.appendChild(leftDiv);
-    menuCenter.appendChild(controlDiv);
+    //menuCenter.appendChild(controlDiv);
 
     return menu;
 }
@@ -196,11 +198,6 @@ gamejs.onTick(function() {
         menu = buildMenu();
     }
 
-    if(!menu2) {
-        menu2 = menuBuilder([200, 200], 'metal');
-        menu2.id = 'menu2';
-    }
-
     if(!surface)
         surface = renderSurface(surface, layers);
 
@@ -209,39 +206,25 @@ gamejs.onTick(function() {
         wrapper = document.getElementById('gjs-canvas-wrapper');
 
         wrapper.appendChild(menu);
-        //wrapper.appendChild(menu2);
     }
 
     render(surface);
 
     if(!anch && ready) {
         jsPlumb.bind('ready', function() {
-            var instance = jsPlumb.getInstance({
-                Endpoint: [ 'Dot', { radius: 4 }],
-                HoverPaintStyle: { strokeStyle: '#1e8151', lineWidth: 2 },
-                ConnectionOverlays: [
-                    [ 'Arrow', {
-                        location: 1,
-                        id: 'arrow',
-                        length: 14,
-                        foldback: 0.8
-                    }],
-                ],
-                Container: 'wrapper'
-            });
-            
             var menus = jsPlumb.getSelector('.menu');
 
-            //instance.draggable(menus);
+            plumb.addEndpoint('menu', conn.target, conn.targetMid);
 
-            instance.bind('click', function(conn) {
-                //instance.detach(conn);
+            plumb.bind('click', function(conn) {
+                plumb.detach(conn);
             });
 
-            instance.bind('connection', function(info) {
+            plumb.bind('connection', function(info) {
+                console.log(info);
             });
 
-            instance.bind('beforeDetach', function(conn) {
+            plumb.bind('beforeDetach', function(conn) {
             });
 
         });

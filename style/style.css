@@ -14,7 +14,6 @@ div, canvas {
     color: #000;
 }
 .menu-controls {
-    float: right;
     width: 16px;
 }
 input.close {
@@ -23,6 +22,7 @@ input.close {
     background-repeat: no-repeat;
     background-position: center right;
     background-size: 16px 16px;
+    margin: 16px 2px 2px;
     border: none;
     cursor: pointer;
     height: 16px;
@@ -68,7 +68,6 @@ input.down-arrow {
     width: calc(100% - 290px);
     height: 100%;
     vertical-align: top;
-    overflow-y: scroll;
     background: rgba(0, 0, 0, .1);
     -webkit-tap-highlight-color: rgba(0,0,0,0);
 }
