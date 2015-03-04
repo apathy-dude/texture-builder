@@ -24,17 +24,12 @@ var layers = {};
 var OUTPUT_ID = 'output';
 
 function onchange(e) {
-    if(e)
-        e.preventDefault();
-
     function runHandle(listeners) {
         for(var l in listeners) {
-            if(listeners[l] instanceof Object && !(listeners[l] instanceof Function)) {
+            if(listeners[l] instanceof Object && !(listeners[l] instanceof Function))
                 runHandle(listeners[l]);
-            }
-            else if(listeners[l] instanceof Function && l === 'handle') {
+            else if(listeners[l] instanceof Function && l === 'handle')
                 listeners[l]();
-            }
         }
     }
 
@@ -117,8 +112,11 @@ function outputLayer() {
         if(surface)
             surface.clear();
 
-        if(obj.inputLayer)
-            surface = data.inputLayer.render(obj.inputLayer);
+        if(obj.inputLayer) {
+            var surf = data.inputLayer.render(obj.inputLayer);
+            if(surf)
+                surface = surf;
+        }
 
         return surface;
     }
@@ -185,13 +183,14 @@ gamejs.ready(function() {
 
         plumb.bind('connection', function(conn) {
             var source = layers[conn.sourceId];
-            layers[conn.targetId].addSource(layers[conn.targetId], source, conn.targetEndpoint.id);
+            layers[conn.targetId].addSource(layers[conn.targetId], source, conn.targetEndpoint.id, conn.connection.id);
             onchange();
         });
 
         plumb.bind('beforeDetach', function(conn) {
             var target = layers[conn.targetId];
-            target.removeSource(target, conn.id);
+            if(target)
+                target.removeSource(target, conn.id);
             onchange();
         });
     });
@@ -8097,8 +8096,8 @@ function solid() {
     else if(arguments.length === 2) {
         surface = arguments[0];
         if(arguments[1] instanceof Array) {
-            width = arguments[0][0];
-            height = arguments[0][1];
+            width = arguments[1][0];
+            height = arguments[1][1];
         }
         else {
             throw new Error('Improper arguments for solid surface');
@@ -8330,52 +8329,76 @@ var menuBuilder = require('../menuBuilder');
 var plumb = require('../jsPlumbInstance');
 var conn = require('../connectors');
 var guid = require('../util/guid');
+var surface;
+
+function addSource(data, source, target, connId) {
+    if(target === data.topId) {
+        data.topInput = source;
+        data.topIn = connId;
+    }
+    else if(target === data.botId) {
+        data.bottomInput = source;
+        data.botIn = connId;
+    }
+}
+
+function removeSource(data, connId) {
+    if(connId === data.topIn) {
+        data.topInput = undefined;
+        data.topIn = undefined;
+    }
+    else if(connId === data.botIn) {
+        data.bottomInput = undefined;
+        data.botIn = undefined;
+    }
+}
 
 function render(data) {
+    if(!data.topInput && !data.bottomInput)
+        data.surface = SurfaceFactory.solid(data.surface, [64, 64]);
+    else if(!data.topInput)
+        data.surface = data.bottomInput.render(data.bottomInput);
+    else if(!data.bottomInput)
+        data.surface = data.topInput.render(data.topInput);
+    else {
+        data.surface = data.topInput.render(data.topInput).clone();
+        data.surface.blit(data.bottomInput.render(data.bottomInput));
+    }
+
+    return data.surface;
 }
 
 module.exports = function(onchange, layerControl) {
-    var menu = menuBuilder([350, 193], 'metal');
+    var menu = menuBuilder([110, 120], 'metal');
     menu.children[1].innerHTML = 'Blit';
     menu.id = guid();
     var div = menu.children[4];
 
-    var listeners = {
-        seed: {},
-        red: {},
-        green: {},
-        blue: {},
-        alpha: {}
+    var listeners = {};
+
+    var obj = {
+        div: menu,
+        listeners: listeners,
+        render: render,
+        topInput: undefined,
+        bottomInput: undefined,
+        addSource: addSource,
+        removeSource: removeSource,
+        topId: undefined,
+        botId: undefined,
+        topIn: undefined,
+        botIn: undefined,
+        surface: null
     };
 
-    var controls = (function() {
-        var div = document.createElement('div');
-        div.className = 'controls';
-
-        var seedWrapper = text(listeners.seed, onchange, 'Seed: ', '1');
-
-        var redWrapper = numberRange(listeners.red, onchange, 'Red: ', 0, 255);
-        var greenWrapper = numberRange(listeners.green, onchange, 'Green: ', 0, 255);
-        var blueWrapper = numberRange(listeners.blue, onchange, 'Blue: ', 0, 255);
-        var alphaWrapper = numberRange(listeners.alpha, onchange, 'Alpha: ', 0, 255);
-
-        div.appendChild(seedWrapper);
-        div.appendChild(redWrapper);
-        div.appendChild(greenWrapper);
-        div.appendChild(blueWrapper);
-        div.appendChild(alphaWrapper);
-
-        return div;
-    })();
-
-    var seedWrapper = text(listeners.seed, onchange, 'Seed: ', '1');
-
-    var obj = { div: menu, listeners: listeners, render: render };
-
     menu.children[2].appendChild(layerControl(obj));
-    div.appendChild(controls);
 
     plumb.addEndpoint(menu, conn.source);
+    var topId = plumb.addEndpoint(menu, conn.target, conn.targetTop);
+    var botId = plumb.addEndpoint(menu, conn.target, conn.targetBottom);
+
+    obj.topId = topId.id;
+    obj.botId = botId.id;
 
     return obj;
 };
@@ -8614,69 +8637,101 @@ module.exports = function(onchange, layerControl) {
 };
 
 },{"../SurfaceFactory":51,"../connectors":52,"../jsPlumbInstance":54,"../menuBuilder":65,"../util/guid":67,"./component/numberRangeInput":59,"./component/textInput":60}],62:[function(require,module,exports){
-var layerControl = require('./component/control');
 var SurfaceFactory = require('../SurfaceFactory');
+var menuBuilder = require('../menuBuilder');
+var plumb = require('../jsPlumbInstance');
+var conn = require('../connectors');
+var guid = require('../util/guid');
 
-function render(data, layers) {
-    var args = data.listeners;
-    var size = 64;
-    var surf = SurfaceFactory.relative(layers[2].render(layers[2]),
-        function color(xPos, yPos, sourceInfo, data) {
-            var pixel = sourceInfo.get(xPos, yPos);
-            pixel[3] += (12 - data.dist) * 3;
-
-            if(data.y < 0) {
-                pixel[0] = 160;
-                pixel[1] = 160;
-                pixel[2] = 160;
-            }
-
-            return pixel;
-        },
-        function callback(xPos, yPos, sourceInfo) {
-            var shadowLength = 8;
-
-            if(sourceInfo.get(xPos, yPos)[3] > 0)
-                return false;
-
-            var d;
-            for(var sL = 1; sL < shadowLength; sL++) {
-                for(var yMulti = -1; yMulti < 2; yMulti++) {
-                    if(yMulti === 0)
-                        continue;
-
-                    var yp = yPos + sL * yMulti;
-                    var xp = xPos + sL * 0;
-
-                    if(yp > size)
-                        yp -= size;
-                    else if(yp < 0)
-                        yp += size;
-
-                    d = sourceInfo.get(xp, yp);
-                    if(d[3] > 0)
-                        return { dist: sL, y: yMulti };
-                }
-            }
-
-            return false;
-        });
-    //TODO: remove cache hack
-    data.surface = surf;
-    return surf;
+function addSource(data, source, target, connId) {
+    data.source = source;
 }
 
-module.exports = function(onchange) {
+function removeSource(data, connId) {
+    data.source = undefined;
+}
+
+function render(data) {
+    var size = 64;
+
+    if(!data.source)
+        data.surface = SurfaceFactory.solid(data.surface, [size, size]);
+    else 
+    {
+        var surf = SurfaceFactory.relative(data.source.render(data.source),
+            function color(xPos, yPos, sourceInfo, data) {
+                var pixel = sourceInfo.get(xPos, yPos);
+                pixel[3] += (12 - data.dist) * 3;
+
+                if(data.y < 0) {
+                    pixel[0] = 160;
+                    pixel[1] = 160;
+                    pixel[2] = 160;
+                }
+
+                return pixel;
+            },
+            function callback(xPos, yPos, sourceInfo) {
+                var shadowLength = 8;
+
+                if(sourceInfo.get(xPos, yPos)[3] > 0)
+                    return false;
+
+                var d;
+                for(var sL = 1; sL < shadowLength; sL++) {
+                    for(var yMulti = -1; yMulti < 2; yMulti++) {
+                        if(yMulti === 0)
+                            continue;
+
+                        var yp = yPos + sL * yMulti;
+                        var xp = xPos + sL * 0;
+
+                        if(yp > size)
+                            yp -= size;
+                        else if(yp < 0)
+                            yp += size;
+
+                        d = sourceInfo.get(xp, yp);
+                        if(d[3] > 0)
+                            return { dist: sL, y: yMulti };
+                    }
+                }
+
+                return false;
+            });
+        data.surface = surf;
+    }
+
+    return data.surface;
+}
+
+module.exports = function(onchange, layerControl) {
+    var menu = menuBuilder([140, 120], 'metal');
+    menu.children[1].innerHTML = 'Shadow';
+    menu.id = guid();
     var div = document.createElement('div');
-    div.className = 'control';
-    div.innerHTML = 'Shadow';
 
     div.appendChild(layerControl());
 
-    return { div: div, listeners: {}, render: render, surface: null };
+    var obj = {
+        div: menu,
+        listeners: {},
+        source: undefined,
+        render: render,
+        addSource: addSource,
+        removeSource: removeSource,
+        surface: null
+    };
+
+    menu.children[2].appendChild(layerControl(obj));
+
+    plumb.addEndpoint(menu, conn.source);
+    plumb.addEndpoint(menu, conn.target, conn.targetMid);
+
+    return obj;
 };
 
-},{"../SurfaceFactory":51,"./component/control":57}],63:[function(require,module,exports){
+},{"../SurfaceFactory":51,"../connectors":52,"../jsPlumbInstance":54,"../menuBuilder":65,"../util/guid":67}],63:[function(require,module,exports){
 var SurfaceFactory = require('../SurfaceFactory');
 var menuBuilder = require('../menuBuilder');
 var text = require('./component/textInput');
@@ -8711,7 +8766,6 @@ module.exports = function(onchange, layerControl) {
 
         return div;
     })();
-
 
     var out = { div: menu, listeners: listeners, render: render, surface: null };
 
