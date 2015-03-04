@@ -22,10 +22,10 @@ function render(data) {
 }
 
 module.exports = function(onchange, layerControl) {
-    var menu = menuBuilder([350, 175], 'metal');
+    var menu = menuBuilder([350, 170], 'metal');
+    menu.children[1].innerHTML = 'Voronoi';
     menu.id = guid();
     var div = menu.children[4];
-    div.innerHTML = 'Voronoi';
 
     var listeners = {
         seed: {},
@@ -34,21 +34,27 @@ module.exports = function(onchange, layerControl) {
         points: {}
     };
 
-    var seedWrapper = text(listeners.seed, onchange, 'Seed: ', '1');
+    var controls = (function() {
+        var div = document.createElement('div');
+        div.className = 'controls';
 
-    var widthWrapper = number(listeners.width, onchange, 'Width: ', 1, 1);
+        var seedWrapper = text(listeners.seed, onchange, 'Seed: ', '1');
+        var widthWrapper = number(listeners.width, onchange, 'Width: ', 1, 1);
+        var colorWrapper = text(listeners.color, onchange, 'Color: ', '#000');
+        var pointsWrapper = number(listeners.points, onchange, 'Cells: ', 10, 1);
 
-    var colorWrapper = text(listeners.color, onchange, 'Color: ', '#000');
+        div.appendChild(seedWrapper);
+        div.appendChild(widthWrapper);
+        div.appendChild(colorWrapper);
+        div.appendChild(pointsWrapper);
 
-    var pointsWrapper = number(listeners.points, onchange, 'Cells: ', 10, 1);
+        return div;
+    })();
 
     var obj = { div: menu, listeners: listeners, render: render, surface: null };
 
     menu.children[2].appendChild(layerControl(obj));
-    div.appendChild(seedWrapper);
-    div.appendChild(widthWrapper);
-    div.appendChild(colorWrapper);
-    div.appendChild(pointsWrapper);
+    div.appendChild(controls);
 
     plumb.addEndpoint(menu, conn.source);
 

@@ -13,17 +13,19 @@ gamejs.preload(require('./src/images'));
 var BORDER_WIDTH = 1;
 
 var wrapper;
-var menu;
-var menuCanvasContext;
 var surface;
 
 var anch = false;
 var ready = false;
 
-var layers = [];
+var layers = {};
+
+var OUTPUT_ID = 'output';
 
 function onchange(e) {
-    e.preventDefault();
+    if(e)
+        e.preventDefault();
+
     function runHandle(listeners) {
         for(var l in listeners) {
             if(listeners[l] instanceof Object && !(listeners[l] instanceof Function)) {
@@ -38,133 +40,113 @@ function onchange(e) {
     for(var l in layers)
         runHandle(layers[l].listeners);
 
-    surface = renderSurface(surface, layers);
+    surface = renderSurface(layers);
 }
 
-function buildMenu() {
-
-    var menu = menuBuilder([328, 522], 'metal');
+function outputLayer() {
+    var menu = menuBuilder([328, 110], 'metal');
+    menu.children[1].innerHTML = 'Output';
     var menuCenter = menu.children[4];
-    menu.id = 'menu';
+    menu.id = OUTPUT_ID;
 
-    var controlDiv = (function() {
+    var layerDiv = (function() {
         var div = document.createElement('div');
         div.className = 'controls';
-        return div;
-    })();
 
-    var leftDiv = (function() {
-        var div = document.createElement('div');
-        div.className = 'leftdiv';
-
-        var menuCanvas = (function() {
-            var canvas = document.createElement('canvas');
-            canvas.width = 256;
-            canvas.height = 256;
-            canvas.className = 'canvas';
-            menuCanvasContext = canvas.getContext('2d');
-            return canvas;
-        })();
-
-        var layerDiv = (function() {
+        var addLayerDiv = (function() {
             var div = document.createElement('div');
-            div.className = 'controls';
-            div.style.width = '100%';
-            div.style.display = 'block';
-            div.style.padding = '5px';
 
-            var addLayerDiv = (function() {
+            var title = (function() {
                 var div = document.createElement('div');
-
-                var title = (function() {
-                    var div = document.createElement('div');
-                    div.innerHTML = 'Add Layer';
-
-                    return div;
-                })();
-
-                var type = (function() {
-                    var select = document.createElement('select');
-
-                    function createOption(name, value) {
-                        var option = document.createElement('option');
-                        option.innerHTML = name;
-                        option.value = value;
-                        return option;
-                    }
-
-                    for(var l in layerOptions)
-                        select.appendChild(createOption(layerOptions[l].name, l));
-
-                    return select;
-                })();
-
-                var add = (function() {
-                    var button = document.createElement('input');
-                    button.type = 'button';
-                    button.value = '+';
-                    button.style.float = 'right';
-
-                    button.onclick = function(e) {
-                        var t = layerOptions[type.value];
-                        var lay = t.layer(onchange, layerControl(layers, controlDiv, onchange));
-                        layers.push(lay);
-
-                        wrapper.appendChild(lay.div);
-                        plumb.repaintEverything(); //TODO: find way to only update source
-                        onchange(e);
-                    };
-
-                    return button;
-                })();
-
-                div.appendChild(title);
-                div.appendChild(type);
-                div.appendChild(add);
+                div.innerHTML = 'Add Layer';
 
                 return div;
             })();
 
-            div.appendChild(addLayerDiv);
+            var type = (function() {
+                var select = document.createElement('select');
+
+                function createOption(name, value) {
+                    var option = document.createElement('option');
+                    option.innerHTML = name;
+                    option.value = value;
+                    return option;
+                }
+
+                for(var l in layerOptions)
+                    select.appendChild(createOption(layerOptions[l].name, l));
+
+                return select;
+            })();
+
+            var add = (function() {
+                var button = document.createElement('input');
+                button.type = 'button';
+                button.value = '+';
+                button.style.float = 'right';
+
+                button.onclick = function(e) {
+                    var t = layerOptions[type.value];
+                    var lay = t.layer(onchange, layerControl(layers, onchange));
+                    layers[lay.div.id] = lay;
+
+                    wrapper.appendChild(lay.div);
+                    plumb.repaintEverything(); //TODO: find way to only update source
+                    onchange(e);
+                };
+
+                return button;
+            })();
+
+            div.appendChild(title);
+            div.appendChild(type);
+            div.appendChild(add);
 
             return div;
         })();
 
-        div.appendChild(menuCanvas);
-        div.appendChild(layerDiv);
+        div.appendChild(addLayerDiv);
 
         return div;
     })();
 
-    menuCenter.appendChild(leftDiv);
-    //menuCenter.appendChild(controlDiv);
+    menuCenter.appendChild(layerDiv);
 
-    return menu;
+    function render(data) {
+        if(surface)
+            surface.clear();
+
+        if(obj.inputLayer)
+            surface = data.inputLayer.render(obj.inputLayer);
+
+        return surface;
+    }
+
+    function addSource(data, source, target) {
+        data.inputLayer = source;
+    }
+
+    function removeSource(data, target) {
+        data.inputLayer = undefined;
+    }
+
+    var obj = { div: menu, listeners: {}, inputLayer: undefined, render: render, addSource: addSource, removeSource: removeSource };
+
+    return obj;
 }
 
-function renderSurface(mainSurface, surfaceArgs) {
-    var surfaceLayers = [];
+function renderSurface(layers) {
     var size = 64;
 
-    if(!mainSurface)
-        mainSurface = new gamejs.graphics.Surface([size, size]);
+    if(!layers || !layers[OUTPUT_ID])
+        return false;
 
-    mainSurface.clear();
-
-    if(!surfaceArgs || surfaceArgs.length === 0)
-        return mainSurface;
-
-    for(var l in layers)
-        surfaceLayers.push(surfaceArgs[l].render(surfaceArgs[l], surfaceArgs));
-
-    for(var surf in surfaceLayers)
-        mainSurface.blit(surfaceLayers[surf]);
-
-    return mainSurface;
+    return layers[OUTPUT_ID].render(layers[OUTPUT_ID]);
 }
 
 function render(surface) {
-    menuCanvasContext.putImageData(surface.scale([256, 256]).getImageData(), 0, 0);
+    if(!surface)
+        return;
 
     var display = gamejs.display.getSurface();
     display.clear();
@@ -190,46 +172,38 @@ gamejs.ready(function() {
     //gamejs.display.setMode([width, height], gamejs.display.FULLSCREEN);
     gamejs.display.setMode([width, height]);
 
+    jsPlumb.bind('ready', function() {
+        var output = outputLayer();
+        layers[output.div.id] = output;
+        wrapper.appendChild(output.div);
+        plumb.addEndpoint(OUTPUT_ID, conn.target, conn.targetMid);
+
+        plumb.bind('click', function(conn) {
+            plumb.detach(conn);
+        });
+
+        plumb.bind('connection', function(conn) {
+            var source = layers[conn.sourceId];
+            layers[conn.targetId].addSource(layers[conn.targetId], source, conn.targetEndpoint.id);
+            onchange();
+        });
+
+        plumb.bind('beforeDetach', function(conn) {
+            var target = layers[conn.targetId];
+            target.removeSource(target, conn.id);
+            onchange();
+        });
+    });
+
     ready = true;
 });
 
 gamejs.onTick(function() {
-    if(!menu) {
-        menu = buildMenu();
-    }
-
     if(!surface)
         surface = renderSurface(surface, layers);
 
-
-    if(!wrapper) {
+    if(!wrapper)
         wrapper = document.getElementById('gjs-canvas-wrapper');
 
-        wrapper.appendChild(menu);
-    }
-
     render(surface);
-
-    if(!anch && ready) {
-        jsPlumb.bind('ready', function() {
-            var menus = jsPlumb.getSelector('.menu');
-
-            plumb.addEndpoint('menu', conn.target, conn.targetMid);
-
-            plumb.bind('click', function(conn) {
-                plumb.detach(conn);
-            });
-
-            plumb.bind('connection', function(info) {
-                console.log(info);
-            });
-
-            plumb.bind('beforeDetach', function(conn) {
-            });
-
-        });
-
-        anch = true;
-    }
-
 });

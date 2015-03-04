@@ -14,22 +14,30 @@ function render(data) {
 }
 
 module.exports = function(onchange, layerControl) {
-    var menu = menuBuilder([350, 110], 'metal');
+    var menu = menuBuilder([350, 98], 'metal');
+    menu.children[1].innerHTML = 'Solid';
     menu.id = guid();
     var div = menu.children[4];
-    div.innerHTML = 'Solid';
 
     var listeners = {
         color: {}
     };
 
-    var colorWrapper = text(listeners.color, onchange, 'Color: ', '#FFF');
+    var controls = (function() {
+        var div = document.createElement('div');
+        div.className = 'controls';
+
+        var colorWrapper = text(listeners.color, onchange, 'Color: ', '#FFF');
+        div.appendChild(colorWrapper);
+
+        return div;
+    })();
+
 
     var out = { div: menu, listeners: listeners, render: render, surface: null };
 
     menu.children[2].appendChild(layerControl(out));
-    div.appendChild(colorWrapper);
-
+    div.appendChild(controls);
     plumb.addEndpoint(menu, conn.source);
 
     return out;

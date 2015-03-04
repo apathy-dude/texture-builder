@@ -1,4 +1,6 @@
-module.exports = function(layers, menu, onchange) {
+var plumb = require('../../jsPlumbInstance');
+
+module.exports = function(layers, onchange) {
     return function(layer) {
         var div = document.createElement('div');
         div.className = 'menu-controls';
@@ -9,10 +11,10 @@ module.exports = function(layers, menu, onchange) {
             button.className = 'close';
 
             button.onclick = function(e) {
-                var l = layers.indexOf(layer);
-                if(l > -1) {
-                    layers.splice(l, 1);
-                    layer.div.parentElement.removeChild(layer.div);
+                if(layers[layer.div.id]) {
+                    delete layers[layer.div.id];
+                    plumb.detachAllConnections(layer.div);
+                    plumb.remove(layer.div);
                     onchange(e);
                 }
             };
