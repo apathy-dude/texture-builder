@@ -1,0 +1,49 @@
+{
+  "name": "jsPlumb",
+  "version": "1.7.3",
+  "ignore": [
+    "demo",
+    "dist/apidocs",
+    "dist/demo",
+    "dist/doc",
+    "dist/lib",
+    "dist/tests",
+    "dist/index.html",
+    "doc",
+    "img",
+    "lib",
+    "jekyll",
+    "node_modules",
+    "src",
+    "tests",
+    "Gruntfile.js",
+    "README.md",
+    "changelog.txt",
+    "index.html",
+    "build-support.js",
+    "package.json",
+    "todo.txt",
+    "**/.*",
+    "bower_components",
+    "test"
+  ],
+  "main": [
+    "dist/js/dom.jsPlumb-1.7.3.js",
+    "dist/js/jquery.jsPlumb-1.7.3.js"
+  ],
+  "homepage": "http://jsplumbtoolkit.com",
+  "authors": [
+    "Simon Porritt <simon@jsplumbtoolkit.com>"
+  ],
+  "description": "Visual connectivity for webapps",
+  "license": "MIT/GPL2",
+  "_release": "1.7.3",
+  "_resolution": {
+    "type": "version",
+    "tag": "1.7.3",
+    "commit": "cc75289945f78601e7733f66b03f4fa44d18561e"
+  },
+  "_source": "git://github.com/sporritt/jsPlumb.git",
+  "_target": "~1.7.3",
+  "_originalSource": "jsplumb"
+}
