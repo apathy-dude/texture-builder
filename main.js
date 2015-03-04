@@ -23,17 +23,12 @@ var layers = {};
 var OUTPUT_ID = 'output';
 
 function onchange(e) {
-    if(e)
-        e.preventDefault();
-
     function runHandle(listeners) {
         for(var l in listeners) {
-            if(listeners[l] instanceof Object && !(listeners[l] instanceof Function)) {
+            if(listeners[l] instanceof Object && !(listeners[l] instanceof Function))
                 runHandle(listeners[l]);
-            }
-            else if(listeners[l] instanceof Function && l === 'handle') {
+            else if(listeners[l] instanceof Function && l === 'handle')
                 listeners[l]();
-            }
         }
     }
 
@@ -116,8 +111,11 @@ function outputLayer() {
         if(surface)
             surface.clear();
 
-        if(obj.inputLayer)
-            surface = data.inputLayer.render(obj.inputLayer);
+        if(obj.inputLayer) {
+            var surf = data.inputLayer.render(obj.inputLayer);
+            if(surf)
+                surface = surf;
+        }
 
         return surface;
     }
@@ -184,13 +182,14 @@ gamejs.ready(function() {
 
         plumb.bind('connection', function(conn) {
             var source = layers[conn.sourceId];
-            layers[conn.targetId].addSource(layers[conn.targetId], source, conn.targetEndpoint.id);
+            layers[conn.targetId].addSource(layers[conn.targetId], source, conn.targetEndpoint.id, conn.connection.id);
             onchange();
         });
 
         plumb.bind('beforeDetach', function(conn) {
             var target = layers[conn.targetId];
-            target.removeSource(target, conn.id);
+            if(target)
+                target.removeSource(target, conn.id);
             onchange();
         });
     });

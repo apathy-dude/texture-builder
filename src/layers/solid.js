@@ -33,7 +33,6 @@ module.exports = function(onchange, layerControl) {
         return div;
     })();
 
-
     var out = { div: menu, listeners: listeners, render: render, surface: null };
 
     menu.children[2].appendChild(layerControl(out));

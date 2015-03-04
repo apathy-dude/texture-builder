@@ -216,8 +216,8 @@ function solid() {
     else if(arguments.length === 2) {
         surface = arguments[0];
         if(arguments[1] instanceof Array) {
-            width = arguments[0][0];
-            height = arguments[0][1];
+            width = arguments[1][0];
+            height = arguments[1][1];
         }
         else {
             throw new Error('Improper arguments for solid surface');
