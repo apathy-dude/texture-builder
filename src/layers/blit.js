@@ -27,16 +27,16 @@ function removeSource(data, connId) {
     }
 }
 
-function render(data) {
+function render(data, size) {
     if(!data.topInput && !data.bottomInput)
         data.surface = SurfaceFactory.solid(data.surface, [64, 64]);
     else if(!data.topInput)
-        data.surface = data.bottomInput.render(data.bottomInput);
+        data.surface = data.bottomInput.render(data.bottomInput, size);
     else if(!data.bottomInput)
-        data.surface = data.topInput.render(data.topInput);
+        data.surface = data.topInput.render(data.topInput, size);
     else {
-        data.surface = data.topInput.render(data.topInput).clone();
-        data.surface.blit(data.bottomInput.render(data.bottomInput));
+        data.surface = data.topInput.render(data.topInput, size).clone();
+        data.surface.blit(data.bottomInput.render(data.bottomInput, size));
     }
 
     return data.surface;

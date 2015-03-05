@@ -12,14 +12,12 @@ function removeSource(data, connId) {
     data.source = undefined;
 }
 
-function render(data) {
-    var size = 64;
-
+function render(data, size) {
     if(!data.source)
         data.surface = SurfaceFactory.solid(data.surface, [size, size]);
     else 
     {
-        var surf = SurfaceFactory.relative(data.source.render(data.source),
+        var surf = SurfaceFactory.relative(data.source.render(data.source, size),
             function color(xPos, yPos, sourceInfo, data) {
                 var pixel = sourceInfo.get(xPos, yPos);
                 pixel[3] += (12 - data.dist) * 3;

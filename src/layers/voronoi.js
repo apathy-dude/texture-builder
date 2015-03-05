@@ -6,10 +6,10 @@ var plumb = require('../jsPlumbInstance');
 var conn = require('../connectors');
 var guid = require('../util/guid');
 
-function render(data) {
+function render(data, size) {
     var args = data.listeners;
     var surf = SurfaceFactory.voronoi(data.surface,
-        [64, 64], {
+        [size, size], {
             seed: args.seed.value(),
             lineWidth: args.width.value(),
             lineColor: args.color.value(),

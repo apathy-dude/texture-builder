@@ -6,10 +6,10 @@ var plumb = require('../jsPlumbInstance');
 var conn = require('../connectors');
 var guid = require('../util/guid');
 
-function render(data) {
+function render(data, size) {
     var args = data.listeners;
     var surf = SurfaceFactory.noise(data.surface,
-        [64, 64],
+        [size, size],
         args.seed.value(),
         [
             args.red.min.value(),
@@ -61,8 +61,6 @@ module.exports = function(onchange, layerControl) {
 
         return div;
     })();
-
-    var seedWrapper = text(listeners.seed, onchange, 'Seed: ', '1');
 
     var obj = { div: menu, listeners: listeners, render: render };
 

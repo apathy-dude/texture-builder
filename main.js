@@ -4,7 +4,7 @@ var plumb = require('./src/jsPlumbInstance');
 var conn = require('./src/connectors');
 
 var layerControl = require('./src/layers/component/control');
-
+var numberComponent = require('./src/layers/component/numberInput');
 var layerOptions = require('./src/layers');
 
 //Preload image and sound assets
@@ -39,10 +39,14 @@ function onchange(e) {
 }
 
 function outputLayer() {
-    var menu = menuBuilder([328, 110], 'metal');
+    var menu = menuBuilder([285, 125], 'metal');
     menu.children[1].innerHTML = 'Output';
     var menuCenter = menu.children[4];
     menu.id = OUTPUT_ID;
+
+    var listeners = {
+        size: {}
+    };
 
     var layerDiv = (function() {
         var div = document.createElement('div');
@@ -50,6 +54,7 @@ function outputLayer() {
 
         var addLayerDiv = (function() {
             var div = document.createElement('div');
+            div.innerHTML = 'Add: ';
 
             var title = (function() {
                 var div = document.createElement('div');
@@ -78,7 +83,7 @@ function outputLayer() {
                 var button = document.createElement('input');
                 button.type = 'button';
                 button.value = '+';
-                button.style.float = 'right';
+                button.style.marginLeft = '16px';
 
                 button.onclick = function(e) {
                     var t = layerOptions[type.value];
@@ -93,26 +98,28 @@ function outputLayer() {
                 return button;
             })();
 
-            div.appendChild(title);
             div.appendChild(type);
             div.appendChild(add);
 
             return div;
         })();
 
+        var size = numberComponent(listeners.size, onchange, 'Size: ', 64, 8);
+
         div.appendChild(addLayerDiv);
+        div.appendChild(size);
 
         return div;
     })();
 
     menuCenter.appendChild(layerDiv);
 
-    function render(data) {
+    function render(data, size) {
         if(surface)
             surface.clear();
 
         if(obj.inputLayer) {
-            var surf = data.inputLayer.render(obj.inputLayer);
+            var surf = data.inputLayer.render(obj.inputLayer, size);
             if(surf)
                 surface = surf;
         }
@@ -128,18 +135,18 @@ function outputLayer() {
         data.inputLayer = undefined;
     }
 
-    var obj = { div: menu, listeners: {}, inputLayer: undefined, render: render, addSource: addSource, removeSource: removeSource };
+    var obj = { div: menu, listeners: listeners, inputLayer: undefined, render: render, addSource: addSource, removeSource: removeSource };
 
     return obj;
 }
 
 function renderSurface(layers) {
-    var size = 64;
-
     if(!layers || !layers[OUTPUT_ID])
         return false;
 
-    return layers[OUTPUT_ID].render(layers[OUTPUT_ID]);
+    var size = layers[OUTPUT_ID].listeners.size.value();
+
+    return layers[OUTPUT_ID].render(layers[OUTPUT_ID], size);
 }
 
 function render(surface) {

@@ -5,9 +5,9 @@ var plumb = require('../jsPlumbInstance');
 var conn = require('../connectors');
 var guid = require('../util/guid');
 
-function render(data) {
+function render(data, size) {
     var args = data.listeners;
-    var surf = SurfaceFactory.solid(data.surface, [64, 64], args.color.value());
+    var surf = SurfaceFactory.solid(data.surface, [size, size], args.color.value());
     //TODO: remove cache hack
     data.surface = surf;
     return surf;
