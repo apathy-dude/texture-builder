@@ -5,7 +5,7 @@ var plumb = require('./src/jsPlumbInstance');
 var conn = require('./src/connectors');
 
 var layerControl = require('./src/layers/component/control');
-
+var numberComponent = require('./src/layers/component/numberInput');
 var layerOptions = require('./src/layers');
 
 //Preload image and sound assets
@@ -40,10 +40,14 @@ function onchange(e) {
 }
 
 function outputLayer() {
-    var menu = menuBuilder([328, 110], 'metal');
+    var menu = menuBuilder([285, 125], 'metal');
     menu.children[1].innerHTML = 'Output';
     var menuCenter = menu.children[4];
     menu.id = OUTPUT_ID;
+
+    var listeners = {
+        size: {}
+    };
 
     var layerDiv = (function() {
         var div = document.createElement('div');
@@ -51,6 +55,7 @@ function outputLayer() {
 
         var addLayerDiv = (function() {
             var div = document.createElement('div');
+            div.innerHTML = 'Add: ';
 
             var title = (function() {
                 var div = document.createElement('div');
@@ -79,7 +84,7 @@ function outputLayer() {
                 var button = document.createElement('input');
                 button.type = 'button';
                 button.value = '+';
-                button.style.float = 'right';
+                button.style.marginLeft = '16px';
 
                 button.onclick = function(e) {
                     var t = layerOptions[type.value];
@@ -94,26 +99,28 @@ function outputLayer() {
                 return button;
             })();
 
-            div.appendChild(title);
             div.appendChild(type);
             div.appendChild(add);
 
             return div;
         })();
 
+        var size = numberComponent(listeners.size, onchange, 'Size: ', 64, 8);
+
         div.appendChild(addLayerDiv);
+        div.appendChild(size);
 
         return div;
     })();
 
     menuCenter.appendChild(layerDiv);
 
-    function render(data) {
+    function render(data, size) {
         if(surface)
             surface.clear();
 
         if(obj.inputLayer) {
-            var surf = data.inputLayer.render(obj.inputLayer);
+            var surf = data.inputLayer.render(obj.inputLayer, size);
             if(surf)
                 surface = surf;
         }
@@ -129,18 +136,18 @@ function outputLayer() {
         data.inputLayer = undefined;
     }
 
-    var obj = { div: menu, listeners: {}, inputLayer: undefined, render: render, addSource: addSource, removeSource: removeSource };
+    var obj = { div: menu, listeners: listeners, inputLayer: undefined, render: render, addSource: addSource, removeSource: removeSource };
 
     return obj;
 }
 
 function renderSurface(layers) {
-    var size = 64;
-
     if(!layers || !layers[OUTPUT_ID])
         return false;
 
-    return layers[OUTPUT_ID].render(layers[OUTPUT_ID]);
+    var size = layers[OUTPUT_ID].listeners.size.value();
+
+    return layers[OUTPUT_ID].render(layers[OUTPUT_ID], size);
 }
 
 function render(surface) {
@@ -208,7 +215,7 @@ gamejs.onTick(function() {
     render(surface);
 });
 
-},{"./src/connectors":52,"./src/images":53,"./src/jsPlumbInstance":54,"./src/layers":55,"./src/layers/component/control":57,"./src/menuBuilder":65,"gamejs":2}],2:[function(require,module,exports){
+},{"./src/connectors":52,"./src/images":53,"./src/jsPlumbInstance":54,"./src/layers":55,"./src/layers/component/control":57,"./src/layers/component/numberInput":58,"./src/menuBuilder":66,"gamejs":2}],2:[function(require,module,exports){
 var matrix = require('./gamejs/math/matrix');
 var objects = require('./gamejs/utils/objects');
 var Callback = require('./gamejs/utils/callback').Callback;
@@ -8322,8 +8329,8 @@ var instance = jsPlumb.getInstance({
 module.exports = instance;
 
 },{}],55:[function(require,module,exports){
-module.exports = [{ name: "blit", layer: require("./layers/blit") },{ name: "noise", layer: require("./layers/noise") },{ name: "shadow", layer: require("./layers/shadow") },{ name: "solid", layer: require("./layers/solid") },{ name: "voronoi", layer: require("./layers/voronoi") }];
-},{"./layers/blit":56,"./layers/noise":61,"./layers/shadow":62,"./layers/solid":63,"./layers/voronoi":64}],56:[function(require,module,exports){
+module.exports = [{ name: "blit", layer: require("./layers/blit") },{ name: "noise", layer: require("./layers/noise") },{ name: "rotate", layer: require("./layers/rotate") },{ name: "shadow", layer: require("./layers/shadow") },{ name: "solid", layer: require("./layers/solid") },{ name: "voronoi", layer: require("./layers/voronoi") }];
+},{"./layers/blit":56,"./layers/noise":61,"./layers/rotate":62,"./layers/shadow":63,"./layers/solid":64,"./layers/voronoi":65}],56:[function(require,module,exports){
 var SurfaceFactory = require('../SurfaceFactory');
 var menuBuilder = require('../menuBuilder');
 var plumb = require('../jsPlumbInstance');
@@ -8353,16 +8360,16 @@ function removeSource(data, connId) {
     }
 }
 
-function render(data) {
+function render(data, size) {
     if(!data.topInput && !data.bottomInput)
         data.surface = SurfaceFactory.solid(data.surface, [64, 64]);
     else if(!data.topInput)
-        data.surface = data.bottomInput.render(data.bottomInput);
+        data.surface = data.bottomInput.render(data.bottomInput, size);
     else if(!data.bottomInput)
-        data.surface = data.topInput.render(data.topInput);
+        data.surface = data.topInput.render(data.topInput, size);
     else {
-        data.surface = data.topInput.render(data.topInput).clone();
-        data.surface.blit(data.bottomInput.render(data.bottomInput));
+        data.surface = data.topInput.render(data.topInput, size).clone();
+        data.surface.blit(data.bottomInput.render(data.bottomInput, size));
     }
 
     return data.surface;
@@ -8403,7 +8410,7 @@ module.exports = function(onchange, layerControl) {
     return obj;
 };
 
-},{"../SurfaceFactory":51,"../connectors":52,"../jsPlumbInstance":54,"../menuBuilder":65,"../util/guid":67}],57:[function(require,module,exports){
+},{"../SurfaceFactory":51,"../connectors":52,"../jsPlumbInstance":54,"../menuBuilder":66,"../util/guid":68}],57:[function(require,module,exports){
 var plumb = require('../../jsPlumbInstance');
 
 module.exports = function(layers, onchange) {
@@ -8568,10 +8575,10 @@ var plumb = require('../jsPlumbInstance');
 var conn = require('../connectors');
 var guid = require('../util/guid');
 
-function render(data) {
+function render(data, size) {
     var args = data.listeners;
     var surf = SurfaceFactory.noise(data.surface,
-        [64, 64],
+        [size, size],
         args.seed.value(),
         [
             args.red.min.value(),
@@ -8624,8 +8631,6 @@ module.exports = function(onchange, layerControl) {
         return div;
     })();
 
-    var seedWrapper = text(listeners.seed, onchange, 'Seed: ', '1');
-
     var obj = { div: menu, listeners: listeners, render: render };
 
     menu.children[2].appendChild(layerControl(obj));
@@ -8636,7 +8641,86 @@ module.exports = function(onchange, layerControl) {
     return obj;
 };
 
-},{"../SurfaceFactory":51,"../connectors":52,"../jsPlumbInstance":54,"../menuBuilder":65,"../util/guid":67,"./component/numberRangeInput":59,"./component/textInput":60}],62:[function(require,module,exports){
+},{"../SurfaceFactory":51,"../connectors":52,"../jsPlumbInstance":54,"../menuBuilder":66,"../util/guid":68,"./component/numberRangeInput":59,"./component/textInput":60}],62:[function(require,module,exports){
+var SurfaceFactory = require('../SurfaceFactory');
+var menuBuilder = require('../menuBuilder');
+var number = require('./component/numberInput');
+var plumb = require('../jsPlumbInstance');
+var conn = require('../connectors');
+var guid = require('../util/guid');
+
+function addSource(data, source, target, connId) {
+    data.source = source;
+}
+
+function removeSource(data, connId) {
+    data.source = undefined;
+}
+
+function render(data, size) {
+    if(!data.source)
+        data.surface = SurfaceFactory.solid(data.surface, [size, size]);
+    else {
+        var source = data.source.render(data.source, size).clone();
+        data.surface = SurfaceFactory.solid(data.surface, [size * 3, size * 3]);
+        data.surface.blit(source, [-size, -size]);
+        data.surface.blit(source, [-size, 0]);
+        data.surface.blit(source, [-size, size]);
+        data.surface.blit(source, [0, -size]);
+        data.surface.blit(source, [0, 0]);
+        data.surface.blit(source, [0, size]);
+        data.surface.blit(source, [size, -size]);
+        data.surface.blit(source, [size, 0]);
+        data.surface.blit(source, [size, size]);
+        source = data.surface.rotate(data.listeners.angle.value());
+        data.surface = SurfaceFactory.solid(data.surface, [size, size]);
+        data.surface.blit(source, [0, 0], [size, size, size, size]);
+    }
+
+    return data.surface;
+}
+
+module.exports = function(onchange, layerControl) {
+    var menu = menuBuilder([350, 193], 'metal');
+    menu.children[1].innerHTML = 'Rotate';
+    menu.id = guid();
+    var div = menu.children[4];
+
+    var listeners = {
+        angle: {}
+    };
+
+    var controls = (function() {
+        var div = document.createElement('div');
+        div.className = 'controls';
+
+        var angleWrapper = number(listeners.angle, onchange, 'Angle: ', 0, 0, 359);
+
+        div.appendChild(angleWrapper);
+
+        return div;
+    })();
+
+    var obj = {
+        div: menu,
+        listeners: listeners,
+        render: render,
+        source: undefined,
+        addSource: addSource,
+        removeSource: removeSource,
+        surface: null
+    };
+
+    menu.children[2].appendChild(layerControl(obj));
+    div.appendChild(controls);
+
+    plumb.addEndpoint(menu, conn.target, conn.targetMid);
+    plumb.addEndpoint(menu, conn.source);
+
+    return obj;
+};
+
+},{"../SurfaceFactory":51,"../connectors":52,"../jsPlumbInstance":54,"../menuBuilder":66,"../util/guid":68,"./component/numberInput":58}],63:[function(require,module,exports){
 var SurfaceFactory = require('../SurfaceFactory');
 var menuBuilder = require('../menuBuilder');
 var plumb = require('../jsPlumbInstance');
@@ -8651,14 +8735,12 @@ function removeSource(data, connId) {
     data.source = undefined;
 }
 
-function render(data) {
-    var size = 64;
-
+function render(data, size) {
     if(!data.source)
         data.surface = SurfaceFactory.solid(data.surface, [size, size]);
     else 
     {
-        var surf = SurfaceFactory.relative(data.source.render(data.source),
+        var surf = SurfaceFactory.relative(data.source.render(data.source, size),
             function color(xPos, yPos, sourceInfo, data) {
                 var pixel = sourceInfo.get(xPos, yPos);
                 pixel[3] += (12 - data.dist) * 3;
@@ -8731,7 +8813,7 @@ module.exports = function(onchange, layerControl) {
     return obj;
 };
 
-},{"../SurfaceFactory":51,"../connectors":52,"../jsPlumbInstance":54,"../menuBuilder":65,"../util/guid":67}],63:[function(require,module,exports){
+},{"../SurfaceFactory":51,"../connectors":52,"../jsPlumbInstance":54,"../menuBuilder":66,"../util/guid":68}],64:[function(require,module,exports){
 var SurfaceFactory = require('../SurfaceFactory');
 var menuBuilder = require('../menuBuilder');
 var text = require('./component/textInput');
@@ -8739,9 +8821,9 @@ var plumb = require('../jsPlumbInstance');
 var conn = require('../connectors');
 var guid = require('../util/guid');
 
-function render(data) {
+function render(data, size) {
     var args = data.listeners;
-    var surf = SurfaceFactory.solid(data.surface, [64, 64], args.color.value());
+    var surf = SurfaceFactory.solid(data.surface, [size, size], args.color.value());
     //TODO: remove cache hack
     data.surface = surf;
     return surf;
@@ -8777,7 +8859,7 @@ module.exports = function(onchange, layerControl) {
 };
 
 
-},{"../SurfaceFactory":51,"../connectors":52,"../jsPlumbInstance":54,"../menuBuilder":65,"../util/guid":67,"./component/textInput":60}],64:[function(require,module,exports){
+},{"../SurfaceFactory":51,"../connectors":52,"../jsPlumbInstance":54,"../menuBuilder":66,"../util/guid":68,"./component/textInput":60}],65:[function(require,module,exports){
 var SurfaceFactory = require('../SurfaceFactory');
 var menuBuilder = require('../menuBuilder');
 var text = require('./component/textInput');
@@ -8786,10 +8868,10 @@ var plumb = require('../jsPlumbInstance');
 var conn = require('../connectors');
 var guid = require('../util/guid');
 
-function render(data) {
+function render(data, size) {
     var args = data.listeners;
     var surf = SurfaceFactory.voronoi(data.surface,
-        [64, 64], {
+        [size, size], {
             seed: args.seed.value(),
             lineWidth: args.width.value(),
             lineColor: args.color.value(),
@@ -8841,7 +8923,7 @@ module.exports = function(onchange, layerControl) {
     return obj;
 };
 
-},{"../SurfaceFactory":51,"../connectors":52,"../jsPlumbInstance":54,"../menuBuilder":65,"../util/guid":67,"./component/numberInput":58,"./component/textInput":60}],65:[function(require,module,exports){
+},{"../SurfaceFactory":51,"../connectors":52,"../jsPlumbInstance":54,"../menuBuilder":66,"../util/guid":68,"./component/numberInput":58,"./component/textInput":60}],66:[function(require,module,exports){
 var plumb = require('./jsPlumbInstance');
 
 function move(menu, binder) {
@@ -9043,9 +9125,9 @@ module.exports = function menu() {
     return newMenu;
 };
 
-},{"./jsPlumbInstance":54}],66:[function(require,module,exports){
+},{"./jsPlumbInstance":54}],67:[function(require,module,exports){
 module.exports = [];
-},{}],67:[function(require,module,exports){
+},{}],68:[function(require,module,exports){
 function s4() {
     return Math.floor((1 + Math.random()) * 0x10000)
         .toString(16)
@@ -9056,4 +9138,4 @@ module.exports = function guid() {
     return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
 };
 
-},{}]},{},[51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,1]);
+},{}]},{},[51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,1]);
