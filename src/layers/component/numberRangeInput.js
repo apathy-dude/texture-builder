@@ -16,7 +16,8 @@ module.exports = function(listeners, onchange, label, minVal, maxVal) {
         };
 
         listeners.handle = function() {
-            if(number.value < minVal)
+            var val = Number.parseInt(number.value);
+            if(val < minVal)
                 number.value = minVal;
         };
 
@@ -34,7 +35,8 @@ module.exports = function(listeners, onchange, label, minVal, maxVal) {
         };
 
         listeners.handle = function() {
-            if(number.value > maxVal)
+            var val = Number.parseInt(number.value);
+            if(val > maxVal)
                 number.value = maxVal;
         };
 
@@ -49,7 +51,9 @@ module.exports = function(listeners, onchange, label, minVal, maxVal) {
     })();
 
     listeners.handle = function() {
-        if(min.value > max.value)
+        var minVal = Number.parseInt(min.value);
+        var maxVal = Number.parseInt(max.value);
+        if(minVal > maxVal)
             min.value = max.value;
     };
 
