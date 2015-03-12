@@ -15,9 +15,6 @@ var BORDER_WIDTH = 1;
 var wrapper;
 var surface;
 
-var anch = false;
-var ready = false;
-
 var layers = {};
 
 var OUTPUT_ID = 'output';
@@ -39,7 +36,7 @@ function onchange(e) {
 }
 
 function outputLayer() {
-    var menu = menuBuilder([285, 125], 'metal');
+    var menu = menuBuilder([285, 150], 'metal');
     menu.children[1].innerHTML = 'Output';
     var menuCenter = menu.children[4];
     menu.id = OUTPUT_ID;
@@ -48,7 +45,7 @@ function outputLayer() {
         size: {}
     };
 
-    var layerDiv = (function() {
+    var controls = (function() {
         var div = document.createElement('div');
         div.className = 'controls';
 
@@ -106,13 +103,27 @@ function outputLayer() {
 
         var size = numberComponent(listeners.size, onchange, 'Size: ', 64, 8);
 
+        var exportImage = (function() {
+            var button = document.createElement('input');
+            button.type = 'button';
+            button.value = 'Export';
+
+            button.onclick = function(e) {
+                if(surface)
+                    window.open(surface._canvas.toDataURL());
+            };
+
+            return button;
+        })();
+
         div.appendChild(addLayerDiv);
         div.appendChild(size);
+        div.appendChild(exportImage);
 
         return div;
     })();
 
-    menuCenter.appendChild(layerDiv);
+    menuCenter.appendChild(controls);
 
     function render(data, size) {
         if(surface)
@@ -200,8 +211,6 @@ gamejs.ready(function() {
             onchange();
         });
     });
-
-    ready = true;
 });
 
 gamejs.onTick(function() {
