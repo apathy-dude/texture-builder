@@ -20,12 +20,13 @@ function getDeltaD(xRange, yRange, xVal, yVal) {
     var yRangeMin = yRange.min.value();
     var yRangeMax = yRange.max.value();
 
+    var temp;
     if(xVal < 0) {
         xRangeMax *= -1;
         xRangeMin *= -1;
         xVal *= -1;
 
-        var temp = xRangeMax;
+        temp = xRangeMax;
         xRangeMax = xRangeMin;
         xRangeMin = temp;
     }
@@ -38,7 +39,7 @@ function getDeltaD(xRange, yRange, xVal, yVal) {
         yRangeMin *= -1;
         yVal *= -1;
 
-        var temp = yRangeMax;
+        temp = yRangeMax;
         yRangeMax = yRangeMin;
         yRangeMin = temp;
     }
@@ -62,7 +63,7 @@ function getDeltaD(xRange, yRange, xVal, yVal) {
 function getValue(input, dist) {
     var dIn = input.max.value() - input.min.value();
 
-    return  dist * dIn + input.min.value();;
+    return  dist * dIn + input.min.value();
 }
 
 function render(data, size) {
