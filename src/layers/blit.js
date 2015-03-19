@@ -62,14 +62,19 @@ module.exports = function(onchange, layerControl) {
         botId: undefined,
         topIn: undefined,
         botIn: undefined,
-        surface: null
+        surface: null,
+        connectors: []
     };
 
     menu.children[2].appendChild(layerControl(obj));
 
-    plumb.addEndpoint(menu, conn.source);
+    var endConn = plumb.addEndpoint(menu, conn.source);
     var topId = plumb.addEndpoint(menu, conn.target, conn.targetTop);
     var botId = plumb.addEndpoint(menu, conn.target, conn.targetBottom);
+
+    obj.connectors.push(endConn);
+    obj.connectors.push(topId);
+    obj.connectors.push(botId);
 
     obj.topId = topId.id;
     obj.botId = botId.id;

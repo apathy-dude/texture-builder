@@ -62,12 +62,17 @@ module.exports = function(onchange, layerControl) {
         return div;
     })();
 
-    var obj = { div: menu, listeners: listeners, render: render };
+    var obj = {
+        div: menu,
+        listeners: listeners,
+        render: render,
+        connectors: []
+    };
 
     menu.children[2].appendChild(layerControl(obj));
     div.appendChild(controls);
 
-    plumb.addEndpoint(menu, conn.source);
+    obj.connectors.push(plumb.addEndpoint(menu, conn.source));
 
     return obj;
 };

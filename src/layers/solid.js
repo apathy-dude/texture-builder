@@ -33,11 +33,11 @@ module.exports = function(onchange, layerControl) {
         return div;
     })();
 
-    var out = { div: menu, listeners: listeners, render: render, surface: null };
+    var out = { div: menu, listeners: listeners, render: render, surface: null, connectors: [] };
 
     menu.children[2].appendChild(layerControl(out));
     div.appendChild(controls);
-    plumb.addEndpoint(menu, conn.source);
+    out.connectors.push(plumb.addEndpoint(menu, conn.source));
 
     return out;
 };

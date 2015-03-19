@@ -64,14 +64,15 @@ module.exports = function(onchange, layerControl) {
         source: undefined,
         addSource: addSource,
         removeSource: removeSource,
-        surface: null
+        surface: null,
+        connectors: []
     };
 
     menu.children[2].appendChild(layerControl(obj));
     div.appendChild(controls);
 
-    plumb.addEndpoint(menu, conn.target, conn.targetMid);
-    plumb.addEndpoint(menu, conn.source);
+    obj.connectors.push(plumb.addEndpoint(menu, conn.target, conn.targetMid));
+    obj.connectors.push(plumb.addEndpoint(menu, conn.source));
 
     return obj;
 };

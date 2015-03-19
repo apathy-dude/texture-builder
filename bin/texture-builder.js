@@ -16,9 +16,6 @@ var BORDER_WIDTH = 1;
 var wrapper;
 var surface;
 
-var anch = false;
-var ready = false;
-
 var layers = {};
 
 var OUTPUT_ID = 'output';
@@ -40,7 +37,7 @@ function onchange(e) {
 }
 
 function outputLayer() {
-    var menu = menuBuilder([285, 125], 'metal');
+    var menu = menuBuilder([285, 150], 'metal');
     menu.children[1].innerHTML = 'Output';
     var menuCenter = menu.children[4];
     menu.id = OUTPUT_ID;
@@ -49,11 +46,12 @@ function outputLayer() {
         size: {}
     };
 
-    var layerDiv = (function() {
+    var controls = (function() {
         var div = document.createElement('div');
         div.className = 'controls';
 
         var addLayerDiv = (function() {
+            var zIndex = 1;
             var div = document.createElement('div');
             div.innerHTML = 'Add: ';
 
@@ -91,8 +89,14 @@ function outputLayer() {
                     var lay = t.layer(onchange, layerControl(layers, onchange));
                     layers[lay.div.id] = lay;
 
+                    lay.div.style.zIndex = zIndex * 2;
+                    for(var c in lay.connectors)
+                        lay.connectors[c].canvas.style.zIndex = zIndex * 2 + 1;
+                    zIndex++;
+
                     wrapper.appendChild(lay.div);
                     plumb.repaintEverything(); //TODO: find way to only update source
+
                     onchange(e);
                 };
 
@@ -107,13 +111,27 @@ function outputLayer() {
 
         var size = numberComponent(listeners.size, onchange, 'Size: ', 64, 8);
 
+        var exportImage = (function() {
+            var button = document.createElement('input');
+            button.type = 'button';
+            button.value = 'Export';
+
+            button.onclick = function(e) {
+                if(surface)
+                    window.open(surface._canvas.toDataURL());
+            };
+
+            return button;
+        })();
+
         div.appendChild(addLayerDiv);
         div.appendChild(size);
+        div.appendChild(exportImage);
 
         return div;
     })();
 
-    menuCenter.appendChild(layerDiv);
+    menuCenter.appendChild(controls);
 
     function render(data, size) {
         if(surface)
@@ -182,7 +200,11 @@ gamejs.ready(function() {
         var output = outputLayer();
         layers[output.div.id] = output;
         wrapper.appendChild(output.div);
-        plumb.addEndpoint(OUTPUT_ID, conn.target, conn.targetMid);
+        var out = plumb.addEndpoint(OUTPUT_ID, conn.target, conn.targetMid);
+
+        // Hard coding zIndex
+        output.div.style.zIndex = 0;
+        out.canvas.style.zIndex = 1;
 
         plumb.bind('click', function(conn) {
             plumb.detach(conn);
@@ -201,8 +223,6 @@ gamejs.ready(function() {
             onchange();
         });
     });
-
-    ready = true;
 });
 
 gamejs.onTick(function() {
@@ -8395,14 +8415,19 @@ module.exports = function(onchange, layerControl) {
         botId: undefined,
         topIn: undefined,
         botIn: undefined,
-        surface: null
+        surface: null,
+        connectors: []
     };
 
     menu.children[2].appendChild(layerControl(obj));
 
-    plumb.addEndpoint(menu, conn.source);
+    var endConn = plumb.addEndpoint(menu, conn.source);
     var topId = plumb.addEndpoint(menu, conn.target, conn.targetTop);
     var botId = plumb.addEndpoint(menu, conn.target, conn.targetBottom);
+
+    obj.connectors.push(endConn);
+    obj.connectors.push(topId);
+    obj.connectors.push(botId);
 
     obj.topId = topId.id;
     obj.botId = botId.id;
@@ -8635,12 +8660,17 @@ module.exports = function(onchange, layerControl) {
         return div;
     })();
 
-    var obj = { div: menu, listeners: listeners, render: render };
+    var obj = {
+        div: menu,
+        listeners: listeners,
+        render: render,
+        connectors: []
+    };
 
     menu.children[2].appendChild(layerControl(obj));
     div.appendChild(controls);
 
-    plumb.addEndpoint(menu, conn.source);
+    obj.connectors.push(plumb.addEndpoint(menu, conn.source));
 
     return obj;
 };
@@ -8712,14 +8742,15 @@ module.exports = function(onchange, layerControl) {
         source: undefined,
         addSource: addSource,
         removeSource: removeSource,
-        surface: null
+        surface: null,
+        connectors: []
     };
 
     menu.children[2].appendChild(layerControl(obj));
     div.appendChild(controls);
 
-    plumb.addEndpoint(menu, conn.target, conn.targetMid);
-    plumb.addEndpoint(menu, conn.source);
+    obj.connectors.push(plumb.addEndpoint(menu, conn.target, conn.targetMid));
+    obj.connectors.push(plumb.addEndpoint(menu, conn.source));
 
     return obj;
 };
@@ -8955,14 +8986,15 @@ module.exports = function(onchange, layerControl) {
         render: render,
         addSource: addSource,
         removeSource: removeSource,
-        surface: null
+        surface: null,
+        connectors: []
     };
 
     menu.children[2].appendChild(layerControl(obj));
     div.appendChild(controls);
 
-    plumb.addEndpoint(menu, conn.source);
-    plumb.addEndpoint(menu, conn.target, conn.targetMid);
+    obj.connectors.push(plumb.addEndpoint(menu, conn.source));
+    obj.connectors.push(plumb.addEndpoint(menu, conn.target, conn.targetMid));
 
     return obj;
 };
@@ -9003,11 +9035,11 @@ module.exports = function(onchange, layerControl) {
         return div;
     })();
 
-    var out = { div: menu, listeners: listeners, render: render, surface: null };
+    var out = { div: menu, listeners: listeners, render: render, surface: null, connectors: [] };
 
     menu.children[2].appendChild(layerControl(out));
     div.appendChild(controls);
-    plumb.addEndpoint(menu, conn.source);
+    out.connectors.push(plumb.addEndpoint(menu, conn.source));
 
     return out;
 };
@@ -9067,12 +9099,12 @@ module.exports = function(onchange, layerControl) {
         return div;
     })();
 
-    var obj = { div: menu, listeners: listeners, render: render, surface: null };
+    var obj = { div: menu, listeners: listeners, render: render, surface: null, connectors: [] };
 
     menu.children[2].appendChild(layerControl(obj));
     div.appendChild(controls);
 
-    plumb.addEndpoint(menu, conn.source);
+    obj.connectors.push(plumb.addEndpoint(menu, conn.source));
 
     return obj;
 };

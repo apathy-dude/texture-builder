@@ -50,6 +50,7 @@ function outputLayer() {
         div.className = 'controls';
 
         var addLayerDiv = (function() {
+            var zIndex = 1;
             var div = document.createElement('div');
             div.innerHTML = 'Add: ';
 
@@ -87,8 +88,14 @@ function outputLayer() {
                     var lay = t.layer(onchange, layerControl(layers, onchange));
                     layers[lay.div.id] = lay;
 
+                    lay.div.style.zIndex = zIndex * 2;
+                    for(var c in lay.connectors)
+                        lay.connectors[c].canvas.style.zIndex = zIndex * 2 + 1;
+                    zIndex++;
+
                     wrapper.appendChild(lay.div);
                     plumb.repaintEverything(); //TODO: find way to only update source
+
                     onchange(e);
                 };
 
@@ -192,7 +199,11 @@ gamejs.ready(function() {
         var output = outputLayer();
         layers[output.div.id] = output;
         wrapper.appendChild(output.div);
-        plumb.addEndpoint(OUTPUT_ID, conn.target, conn.targetMid);
+        var out = plumb.addEndpoint(OUTPUT_ID, conn.target, conn.targetMid);
+
+        // Hard coding zIndex
+        output.div.style.zIndex = 0;
+        out.canvas.style.zIndex = 1;
 
         plumb.bind('click', function(conn) {
             plumb.detach(conn);

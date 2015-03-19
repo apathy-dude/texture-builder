@@ -107,6 +107,9 @@ body{
     border: 1px solid #000;
     overflow: hidden;
 }
+#gjs-canvas-wrapper {
+    z-index: 20;
+}
 #gjs-canvas {
     margin: 0;
     padding: 0;
@@ -130,3 +133,4 @@ body{
     line-height: 2.5;
     text-align: center;
 }
+
