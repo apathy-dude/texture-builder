@@ -235,7 +235,7 @@ gamejs.onTick(function() {
     render(surface);
 });
 
-},{"./src/connectors":52,"./src/images":53,"./src/jsPlumbInstance":54,"./src/layers":55,"./src/layers/component/control":57,"./src/layers/component/numberInput":58,"./src/menuBuilder":66,"gamejs":2}],2:[function(require,module,exports){
+},{"./src/connectors":53,"./src/images":54,"./src/jsPlumbInstance":55,"./src/layers":56,"./src/layers/component/control":58,"./src/layers/component/numberInput":59,"./src/menuBuilder":68,"gamejs":2}],2:[function(require,module,exports){
 var matrix = require('./gamejs/math/matrix');
 var objects = require('./gamejs/utils/objects');
 var Callback = require('./gamejs/utils/callback').Callback;
@@ -5554,6 +5554,414 @@ Document.fromURL = function(url) {
 };
 
 },{}],29:[function(require,module,exports){
+/*
+ * A fast javascript implementation of simplex noise by Jonas Wagner
+ *
+ * Based on a speed-improved simplex noise algorithm for 2D, 3D and 4D in Java.
+ * Which is based on example code by Stefan Gustavson (stegu@itn.liu.se).
+ * With Optimisations by Peter Eastman (peastman@drizzle.stanford.edu).
+ * Better rank ordering method by Stefan Gustavson in 2012.
+ *
+ *
+ * Copyright (C) 2012 Jonas Wagner
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+ * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+ * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+ * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ *
+ */
+(function () {
+
+var F2 = 0.5 * (Math.sqrt(3.0) - 1.0),
+    G2 = (3.0 - Math.sqrt(3.0)) / 6.0,
+    F3 = 1.0 / 3.0,
+    G3 = 1.0 / 6.0,
+    F4 = (Math.sqrt(5.0) - 1.0) / 4.0,
+    G4 = (5.0 - Math.sqrt(5.0)) / 20.0;
+
+
+function SimplexNoise(random) {
+    if (!random) random = Math.random;
+    this.p = new Uint8Array(256);
+    this.perm = new Uint8Array(512);
+    this.permMod12 = new Uint8Array(512);
+    for (var i = 0; i < 256; i++) {
+        this.p[i] = random() * 256;
+    }
+    for (i = 0; i < 512; i++) {
+        this.perm[i] = this.p[i & 255];
+        this.permMod12[i] = this.perm[i] % 12;
+    }
+
+}
+SimplexNoise.prototype = {
+    grad3: new Float32Array([1, 1, 0,
+                            - 1, 1, 0,
+                            1, - 1, 0,
+
+                            - 1, - 1, 0,
+                            1, 0, 1,
+                            - 1, 0, 1,
+
+                            1, 0, - 1,
+                            - 1, 0, - 1,
+                            0, 1, 1,
+
+                            0, - 1, 1,
+                            0, 1, - 1,
+                            0, - 1, - 1]),
+    grad4: new Float32Array([0, 1, 1, 1, 0, 1, 1, - 1, 0, 1, - 1, 1, 0, 1, - 1, - 1,
+                            0, - 1, 1, 1, 0, - 1, 1, - 1, 0, - 1, - 1, 1, 0, - 1, - 1, - 1,
+                            1, 0, 1, 1, 1, 0, 1, - 1, 1, 0, - 1, 1, 1, 0, - 1, - 1,
+                            - 1, 0, 1, 1, - 1, 0, 1, - 1, - 1, 0, - 1, 1, - 1, 0, - 1, - 1,
+                            1, 1, 0, 1, 1, 1, 0, - 1, 1, - 1, 0, 1, 1, - 1, 0, - 1,
+                            - 1, 1, 0, 1, - 1, 1, 0, - 1, - 1, - 1, 0, 1, - 1, - 1, 0, - 1,
+                            1, 1, 1, 0, 1, 1, - 1, 0, 1, - 1, 1, 0, 1, - 1, - 1, 0,
+                            - 1, 1, 1, 0, - 1, 1, - 1, 0, - 1, - 1, 1, 0, - 1, - 1, - 1, 0]),
+    noise2D: function (xin, yin) {
+        var permMod12 = this.permMod12,
+            perm = this.perm,
+            grad3 = this.grad3;
+        var n0, n1, n2; // Noise contributions from the three corners
+        // Skew the input space to determine which simplex cell we're in
+        var s = (xin + yin) * F2; // Hairy factor for 2D
+        var i = Math.floor(xin + s);
+        var j = Math.floor(yin + s);
+        var t = (i + j) * G2;
+        var X0 = i - t; // Unskew the cell origin back to (x,y) space
+        var Y0 = j - t;
+        var x0 = xin - X0; // The x,y distances from the cell origin
+        var y0 = yin - Y0;
+        // For the 2D case, the simplex shape is an equilateral triangle.
+        // Determine which simplex we are in.
+        var i1, j1; // Offsets for second (middle) corner of simplex in (i,j) coords
+        if (x0 > y0) {
+            i1 = 1;
+            j1 = 0;
+        } // lower triangle, XY order: (0,0)->(1,0)->(1,1)
+        else {
+            i1 = 0;
+            j1 = 1;
+        } // upper triangle, YX order: (0,0)->(0,1)->(1,1)
+        // A step of (1,0) in (i,j) means a step of (1-c,-c) in (x,y), and
+        // a step of (0,1) in (i,j) means a step of (-c,1-c) in (x,y), where
+        // c = (3-sqrt(3))/6
+        var x1 = x0 - i1 + G2; // Offsets for middle corner in (x,y) unskewed coords
+        var y1 = y0 - j1 + G2;
+        var x2 = x0 - 1.0 + 2.0 * G2; // Offsets for last corner in (x,y) unskewed coords
+        var y2 = y0 - 1.0 + 2.0 * G2;
+        // Work out the hashed gradient indices of the three simplex corners
+        var ii = i & 255;
+        var jj = j & 255;
+        // Calculate the contribution from the three corners
+        var t0 = 0.5 - x0 * x0 - y0 * y0;
+        if (t0 < 0) n0 = 0.0;
+        else {
+            var gi0 = permMod12[ii + perm[jj]] * 3;
+            t0 *= t0;
+            n0 = t0 * t0 * (grad3[gi0] * x0 + grad3[gi0 + 1] * y0); // (x,y) of grad3 used for 2D gradient
+        }
+        var t1 = 0.5 - x1 * x1 - y1 * y1;
+        if (t1 < 0) n1 = 0.0;
+        else {
+            var gi1 = permMod12[ii + i1 + perm[jj + j1]] * 3;
+            t1 *= t1;
+            n1 = t1 * t1 * (grad3[gi1] * x1 + grad3[gi1 + 1] * y1);
+        }
+        var t2 = 0.5 - x2 * x2 - y2 * y2;
+        if (t2 < 0) n2 = 0.0;
+        else {
+            var gi2 = permMod12[ii + 1 + perm[jj + 1]] * 3;
+            t2 *= t2;
+            n2 = t2 * t2 * (grad3[gi2] * x2 + grad3[gi2 + 1] * y2);
+        }
+        // Add contributions from each corner to get the final noise value.
+        // The result is scaled to return values in the interval [-1,1].
+        return 70.0 * (n0 + n1 + n2);
+    },
+    // 3D simplex noise
+    noise3D: function (xin, yin, zin) {
+        var permMod12 = this.permMod12,
+            perm = this.perm,
+            grad3 = this.grad3;
+        var n0, n1, n2, n3; // Noise contributions from the four corners
+        // Skew the input space to determine which simplex cell we're in
+        var s = (xin + yin + zin) * F3; // Very nice and simple skew factor for 3D
+        var i = Math.floor(xin + s);
+        var j = Math.floor(yin + s);
+        var k = Math.floor(zin + s);
+        var t = (i + j + k) * G3;
+        var X0 = i - t; // Unskew the cell origin back to (x,y,z) space
+        var Y0 = j - t;
+        var Z0 = k - t;
+        var x0 = xin - X0; // The x,y,z distances from the cell origin
+        var y0 = yin - Y0;
+        var z0 = zin - Z0;
+        // For the 3D case, the simplex shape is a slightly irregular tetrahedron.
+        // Determine which simplex we are in.
+        var i1, j1, k1; // Offsets for second corner of simplex in (i,j,k) coords
+        var i2, j2, k2; // Offsets for third corner of simplex in (i,j,k) coords
+        if (x0 >= y0) {
+            if (y0 >= z0) {
+                i1 = 1;
+                j1 = 0;
+                k1 = 0;
+                i2 = 1;
+                j2 = 1;
+                k2 = 0;
+            } // X Y Z order
+            else if (x0 >= z0) {
+                i1 = 1;
+                j1 = 0;
+                k1 = 0;
+                i2 = 1;
+                j2 = 0;
+                k2 = 1;
+            } // X Z Y order
+            else {
+                i1 = 0;
+                j1 = 0;
+                k1 = 1;
+                i2 = 1;
+                j2 = 0;
+                k2 = 1;
+            } // Z X Y order
+        }
+        else { // x0<y0
+            if (y0 < z0) {
+                i1 = 0;
+                j1 = 0;
+                k1 = 1;
+                i2 = 0;
+                j2 = 1;
+                k2 = 1;
+            } // Z Y X order
+            else if (x0 < z0) {
+                i1 = 0;
+                j1 = 1;
+                k1 = 0;
+                i2 = 0;
+                j2 = 1;
+                k2 = 1;
+            } // Y Z X order
+            else {
+                i1 = 0;
+                j1 = 1;
+                k1 = 0;
+                i2 = 1;
+                j2 = 1;
+                k2 = 0;
+            } // Y X Z order
+        }
+        // A step of (1,0,0) in (i,j,k) means a step of (1-c,-c,-c) in (x,y,z),
+        // a step of (0,1,0) in (i,j,k) means a step of (-c,1-c,-c) in (x,y,z), and
+        // a step of (0,0,1) in (i,j,k) means a step of (-c,-c,1-c) in (x,y,z), where
+        // c = 1/6.
+        var x1 = x0 - i1 + G3; // Offsets for second corner in (x,y,z) coords
+        var y1 = y0 - j1 + G3;
+        var z1 = z0 - k1 + G3;
+        var x2 = x0 - i2 + 2.0 * G3; // Offsets for third corner in (x,y,z) coords
+        var y2 = y0 - j2 + 2.0 * G3;
+        var z2 = z0 - k2 + 2.0 * G3;
+        var x3 = x0 - 1.0 + 3.0 * G3; // Offsets for last corner in (x,y,z) coords
+        var y3 = y0 - 1.0 + 3.0 * G3;
+        var z3 = z0 - 1.0 + 3.0 * G3;
+        // Work out the hashed gradient indices of the four simplex corners
+        var ii = i & 255;
+        var jj = j & 255;
+        var kk = k & 255;
+        // Calculate the contribution from the four corners
+        var t0 = 0.6 - x0 * x0 - y0 * y0 - z0 * z0;
+        if (t0 < 0) n0 = 0.0;
+        else {
+            var gi0 = permMod12[ii + perm[jj + perm[kk]]] * 3;
+            t0 *= t0;
+            n0 = t0 * t0 * (grad3[gi0] * x0 + grad3[gi0 + 1] * y0 + grad3[gi0 + 2] * z0);
+        }
+        var t1 = 0.6 - x1 * x1 - y1 * y1 - z1 * z1;
+        if (t1 < 0) n1 = 0.0;
+        else {
+            var gi1 = permMod12[ii + i1 + perm[jj + j1 + perm[kk + k1]]] * 3;
+            t1 *= t1;
+            n1 = t1 * t1 * (grad3[gi1] * x1 + grad3[gi1 + 1] * y1 + grad3[gi1 + 2] * z1);
+        }
+        var t2 = 0.6 - x2 * x2 - y2 * y2 - z2 * z2;
+        if (t2 < 0) n2 = 0.0;
+        else {
+            var gi2 = permMod12[ii + i2 + perm[jj + j2 + perm[kk + k2]]] * 3;
+            t2 *= t2;
+            n2 = t2 * t2 * (grad3[gi2] * x2 + grad3[gi2 + 1] * y2 + grad3[gi2 + 2] * z2);
+        }
+        var t3 = 0.6 - x3 * x3 - y3 * y3 - z3 * z3;
+        if (t3 < 0) n3 = 0.0;
+        else {
+            var gi3 = permMod12[ii + 1 + perm[jj + 1 + perm[kk + 1]]] * 3;
+            t3 *= t3;
+            n3 = t3 * t3 * (grad3[gi3] * x3 + grad3[gi3 + 1] * y3 + grad3[gi3 + 2] * z3);
+        }
+        // Add contributions from each corner to get the final noise value.
+        // The result is scaled to stay just inside [-1,1]
+        return 32.0 * (n0 + n1 + n2 + n3);
+    },
+    // 4D simplex noise, better simplex rank ordering method 2012-03-09
+    noise4D: function (x, y, z, w) {
+        var permMod12 = this.permMod12,
+            perm = this.perm,
+            grad4 = this.grad4;
+
+        var n0, n1, n2, n3, n4; // Noise contributions from the five corners
+        // Skew the (x,y,z,w) space to determine which cell of 24 simplices we're in
+        var s = (x + y + z + w) * F4; // Factor for 4D skewing
+        var i = Math.floor(x + s);
+        var j = Math.floor(y + s);
+        var k = Math.floor(z + s);
+        var l = Math.floor(w + s);
+        var t = (i + j + k + l) * G4; // Factor for 4D unskewing
+        var X0 = i - t; // Unskew the cell origin back to (x,y,z,w) space
+        var Y0 = j - t;
+        var Z0 = k - t;
+        var W0 = l - t;
+        var x0 = x - X0; // The x,y,z,w distances from the cell origin
+        var y0 = y - Y0;
+        var z0 = z - Z0;
+        var w0 = w - W0;
+        // For the 4D case, the simplex is a 4D shape I won't even try to describe.
+        // To find out which of the 24 possible simplices we're in, we need to
+        // determine the magnitude ordering of x0, y0, z0 and w0.
+        // Six pair-wise comparisons are performed between each possible pair
+        // of the four coordinates, and the results are used to rank the numbers.
+        var rankx = 0;
+        var ranky = 0;
+        var rankz = 0;
+        var rankw = 0;
+        if (x0 > y0) rankx++;
+        else ranky++;
+        if (x0 > z0) rankx++;
+        else rankz++;
+        if (x0 > w0) rankx++;
+        else rankw++;
+        if (y0 > z0) ranky++;
+        else rankz++;
+        if (y0 > w0) ranky++;
+        else rankw++;
+        if (z0 > w0) rankz++;
+        else rankw++;
+        var i1, j1, k1, l1; // The integer offsets for the second simplex corner
+        var i2, j2, k2, l2; // The integer offsets for the third simplex corner
+        var i3, j3, k3, l3; // The integer offsets for the fourth simplex corner
+        // simplex[c] is a 4-vector with the numbers 0, 1, 2 and 3 in some order.
+        // Many values of c will never occur, since e.g. x>y>z>w makes x<z, y<w and x<w
+        // impossible. Only the 24 indices which have non-zero entries make any sense.
+        // We use a thresholding to set the coordinates in turn from the largest magnitude.
+        // Rank 3 denotes the largest coordinate.
+        i1 = rankx >= 3 ? 1 : 0;
+        j1 = ranky >= 3 ? 1 : 0;
+        k1 = rankz >= 3 ? 1 : 0;
+        l1 = rankw >= 3 ? 1 : 0;
+        // Rank 2 denotes the second largest coordinate.
+        i2 = rankx >= 2 ? 1 : 0;
+        j2 = ranky >= 2 ? 1 : 0;
+        k2 = rankz >= 2 ? 1 : 0;
+        l2 = rankw >= 2 ? 1 : 0;
+        // Rank 1 denotes the second smallest coordinate.
+        i3 = rankx >= 1 ? 1 : 0;
+        j3 = ranky >= 1 ? 1 : 0;
+        k3 = rankz >= 1 ? 1 : 0;
+        l3 = rankw >= 1 ? 1 : 0;
+        // The fifth corner has all coordinate offsets = 1, so no need to compute that.
+        var x1 = x0 - i1 + G4; // Offsets for second corner in (x,y,z,w) coords
+        var y1 = y0 - j1 + G4;
+        var z1 = z0 - k1 + G4;
+        var w1 = w0 - l1 + G4;
+        var x2 = x0 - i2 + 2.0 * G4; // Offsets for third corner in (x,y,z,w) coords
+        var y2 = y0 - j2 + 2.0 * G4;
+        var z2 = z0 - k2 + 2.0 * G4;
+        var w2 = w0 - l2 + 2.0 * G4;
+        var x3 = x0 - i3 + 3.0 * G4; // Offsets for fourth corner in (x,y,z,w) coords
+        var y3 = y0 - j3 + 3.0 * G4;
+        var z3 = z0 - k3 + 3.0 * G4;
+        var w3 = w0 - l3 + 3.0 * G4;
+        var x4 = x0 - 1.0 + 4.0 * G4; // Offsets for last corner in (x,y,z,w) coords
+        var y4 = y0 - 1.0 + 4.0 * G4;
+        var z4 = z0 - 1.0 + 4.0 * G4;
+        var w4 = w0 - 1.0 + 4.0 * G4;
+        // Work out the hashed gradient indices of the five simplex corners
+        var ii = i & 255;
+        var jj = j & 255;
+        var kk = k & 255;
+        var ll = l & 255;
+        // Calculate the contribution from the five corners
+        var t0 = 0.6 - x0 * x0 - y0 * y0 - z0 * z0 - w0 * w0;
+        if (t0 < 0) n0 = 0.0;
+        else {
+            var gi0 = (perm[ii + perm[jj + perm[kk + perm[ll]]]] % 32) * 4;
+            t0 *= t0;
+            n0 = t0 * t0 * (grad4[gi0] * x0 + grad4[gi0 + 1] * y0 + grad4[gi0 + 2] * z0 + grad4[gi0 + 3] * w0);
+        }
+        var t1 = 0.6 - x1 * x1 - y1 * y1 - z1 * z1 - w1 * w1;
+        if (t1 < 0) n1 = 0.0;
+        else {
+            var gi1 = (perm[ii + i1 + perm[jj + j1 + perm[kk + k1 + perm[ll + l1]]]] % 32) * 4;
+            t1 *= t1;
+            n1 = t1 * t1 * (grad4[gi1] * x1 + grad4[gi1 + 1] * y1 + grad4[gi1 + 2] * z1 + grad4[gi1 + 3] * w1);
+        }
+        var t2 = 0.6 - x2 * x2 - y2 * y2 - z2 * z2 - w2 * w2;
+        if (t2 < 0) n2 = 0.0;
+        else {
+            var gi2 = (perm[ii + i2 + perm[jj + j2 + perm[kk + k2 + perm[ll + l2]]]] % 32) * 4;
+            t2 *= t2;
+            n2 = t2 * t2 * (grad4[gi2] * x2 + grad4[gi2 + 1] * y2 + grad4[gi2 + 2] * z2 + grad4[gi2 + 3] * w2);
+        }
+        var t3 = 0.6 - x3 * x3 - y3 * y3 - z3 * z3 - w3 * w3;
+        if (t3 < 0) n3 = 0.0;
+        else {
+            var gi3 = (perm[ii + i3 + perm[jj + j3 + perm[kk + k3 + perm[ll + l3]]]] % 32) * 4;
+            t3 *= t3;
+            n3 = t3 * t3 * (grad4[gi3] * x3 + grad4[gi3 + 1] * y3 + grad4[gi3 + 2] * z3 + grad4[gi3 + 3] * w3);
+        }
+        var t4 = 0.6 - x4 * x4 - y4 * y4 - z4 * z4 - w4 * w4;
+        if (t4 < 0) n4 = 0.0;
+        else {
+            var gi4 = (perm[ii + 1 + perm[jj + 1 + perm[kk + 1 + perm[ll + 1]]]] % 32) * 4;
+            t4 *= t4;
+            n4 = t4 * t4 * (grad4[gi4] * x4 + grad4[gi4 + 1] * y4 + grad4[gi4 + 2] * z4 + grad4[gi4 + 3] * w4);
+        }
+        // Sum up and scale the result to cover the range [-1,1]
+        return 27.0 * (n0 + n1 + n2 + n3 + n4);
+    }
+
+
+};
+
+// amd
+if (typeof define !== 'undefined' && define.amd) define(function(){return SimplexNoise;});
+// browser
+else if (typeof window !== 'undefined') window.SimplexNoise = SimplexNoise;
+//common js
+if (typeof exports !== 'undefined') exports.SimplexNoise = SimplexNoise;
+// nodejs
+if (typeof module !== 'undefined') {
+    module.exports = SimplexNoise;
+}
+
+})();
+
+},{}],30:[function(require,module,exports){
 "use strict"
 
 var dup = require("dup")
@@ -5622,7 +6030,7 @@ function circumcenter(points) {
 
 circumcenter.barycenetric = barycentricCircumcenter
 module.exports = circumcenter
-},{"dup":30,"robust-linear-solve":31}],30:[function(require,module,exports){
+},{"dup":31,"robust-linear-solve":32}],31:[function(require,module,exports){
 "use strict"
 
 function dupe_array(count, value, i) {
@@ -5672,7 +6080,7 @@ function dupe(count, value) {
 }
 
 module.exports = dupe
-},{}],31:[function(require,module,exports){
+},{}],32:[function(require,module,exports){
 "use strict"
 
 var determinant = require("robust-determinant")
@@ -5744,7 +6152,7 @@ function generateDispatch() {
 }
 
 generateDispatch()
-},{"robust-determinant":37}],32:[function(require,module,exports){
+},{"robust-determinant":38}],33:[function(require,module,exports){
 "use strict"
 
 module.exports = compressExpansion
@@ -5779,7 +6187,7 @@ function compressExpansion(e) {
   e.length = top
   return e
 }
-},{}],33:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 "use strict"
 
 module.exports = fastTwoSum
@@ -5797,7 +6205,7 @@ function fastTwoSum(a, b, result) {
 	}
 	return [ar+br, x]
 }
-},{}],34:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 "use strict"
 
 var twoProduct = require("two-product")
@@ -5848,7 +6256,7 @@ function scaleLinearExpansion(e, scale) {
   g.length = count
   return g
 }
-},{"two-product":36,"two-sum":33}],35:[function(require,module,exports){
+},{"two-product":37,"two-sum":34}],36:[function(require,module,exports){
 "use strict"
 
 module.exports = linearExpansionSum
@@ -6005,7 +6413,7 @@ function linearExpansionSum(e, f) {
   g.length = count
   return g
 }
-},{}],36:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 "use strict"
 
 module.exports = twoProduct
@@ -6039,7 +6447,7 @@ function twoProduct(a, b, result) {
 
   return [ y, x ]
 }
-},{}],37:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 "use strict"
 
 var twoProduct = require("two-product")
@@ -6143,7 +6551,7 @@ return robustDeterminant")
 }
 
 generateDispatch()
-},{"robust-compress":32,"robust-scale":34,"robust-sum":35,"two-product":36}],38:[function(require,module,exports){
+},{"robust-compress":33,"robust-scale":35,"robust-sum":36,"two-product":37}],39:[function(require,module,exports){
 "use strict"
 
 //High level idea:
@@ -6590,11 +6998,11 @@ function incrementalConvexHull(points, randomSearch) {
   //Extract boundary cells
   return triangles.boundary()
 }
-},{"robust-orientation":44,"simplicial-complex":47}],39:[function(require,module,exports){
-arguments[4][33][0].apply(exports,arguments)
-},{"dup":33}],40:[function(require,module,exports){
+},{"robust-orientation":45,"simplicial-complex":48}],40:[function(require,module,exports){
 arguments[4][34][0].apply(exports,arguments)
-},{"dup":34,"two-product":43,"two-sum":39}],41:[function(require,module,exports){
+},{"dup":34}],41:[function(require,module,exports){
+arguments[4][35][0].apply(exports,arguments)
+},{"dup":35,"two-product":44,"two-sum":40}],42:[function(require,module,exports){
 "use strict"
 
 module.exports = robustSubtract
@@ -6751,11 +7159,11 @@ function robustSubtract(e, f) {
   g.length = count
   return g
 }
-},{}],42:[function(require,module,exports){
-arguments[4][35][0].apply(exports,arguments)
-},{"dup":35}],43:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 arguments[4][36][0].apply(exports,arguments)
 },{"dup":36}],44:[function(require,module,exports){
+arguments[4][37][0].apply(exports,arguments)
+},{"dup":37}],45:[function(require,module,exports){
 "use strict"
 
 var twoProduct = require("two-product")
@@ -6946,7 +7354,7 @@ function generateOrientationProc() {
 }
 
 generateOrientationProc()
-},{"robust-scale":40,"robust-subtract":41,"robust-sum":42,"two-product":43}],45:[function(require,module,exports){
+},{"robust-scale":41,"robust-subtract":42,"robust-sum":43,"two-product":44}],46:[function(require,module,exports){
 /**
  * Bit twiddling hacks for JavaScript.
  *
@@ -7152,7 +7560,7 @@ exports.nextCombination = function(v) {
 }
 
 
-},{}],46:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 "use strict"; "use restrict";
 
 module.exports = UnionFind;
@@ -7211,7 +7619,7 @@ proto.link = function(x, y) {
     ++ranks[xr];
   }
 }
-},{}],47:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 "use strict"; "use restrict";
 
 var bits      = require("bit-twiddle")
@@ -7555,7 +7963,7 @@ function connectedComponents(cells, vertex_count) {
 }
 exports.connectedComponents = connectedComponents
 
-},{"bit-twiddle":45,"union-find":46}],48:[function(require,module,exports){
+},{"bit-twiddle":46,"union-find":47}],49:[function(require,module,exports){
 "use strict"
 
 var ch = require("incremental-convex-hull")
@@ -7715,7 +8123,7 @@ function triangulate(points, includePointAtInfinity) {
 
   return hull
 }
-},{"incremental-convex-hull":38,"uniq":49}],49:[function(require,module,exports){
+},{"incremental-convex-hull":39,"uniq":50}],50:[function(require,module,exports){
 "use strict"
 
 function unique_pred(list, compare) {
@@ -7774,7 +8182,7 @@ function unique(list, compare, sorted) {
 
 module.exports = unique
 
-},{}],50:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 "use strict"
 
 var triangulate = require("delaunay-triangulate")
@@ -7904,9 +8312,10 @@ function voronoi(points) {
     positions: dualPoints
   }
 }
-},{"circumcenter":29,"delaunay-triangulate":48,"uniq":49}],51:[function(require,module,exports){
+},{"circumcenter":30,"delaunay-triangulate":49,"uniq":50}],52:[function(require,module,exports){
 var gamejs = require('gamejs');
 var voronoiGenerator = require('voronoi-diagram');
+var simplexNoise = require('simplex-noise');
 var g = gamejs.graphics;
 var Surface = g.Surface;
 var SurfaceArray = g.SurfaceArray;
@@ -8093,6 +8502,191 @@ function relative() {
                 else
                     surface.set(xPos, yPos, color);
             }
+        }
+    }
+
+    return surface.surface;
+}
+
+function simplex() {
+    var width,
+        height,
+        seed,
+        rand,
+        minR,
+        minG,
+        minB,
+        minA,
+        maxR,
+        maxG,
+        maxB,
+        maxA,
+        x1,
+        x2,
+        y1,
+        y2,
+        surface;
+
+    var defaults = {
+        min: 0,
+        max: 255,
+        seed: 0,
+        x1: 0,
+        y1: 0,
+        x2: 10,
+        y2: 10
+    };
+
+    if(arguments.length === 6) {
+        if(arguments[4] instanceof Array && arguments[5] instanceof Array && arguments[4].length >= 5 && arguments[5].length >= 5) {
+            surface = arguments[0];
+            width = arguments[1];
+            height = arguments[2];
+            seed = arguments[3];
+            minR = arguments[4][0];
+            minG = arguments[4][1];
+            minB = arguments[4][2];
+            x1 = arguments[4][4];
+            y1 = arguments[4][5];
+            maxR = arguments[5][0];
+            maxG = arguments[5][1];
+            maxB = arguments[5][2];
+            x2 = arguments[5][4];
+            y2 = arguments[5][5];
+
+            if(arguments[4].length > 3)
+                minA = arguments[4][3];
+
+            if(arguments[5].length > 3)
+                maxA = arguments[5][3];
+        }
+        else {
+            throw new Error('Improper arguments for simplex surface');
+        }
+    }
+    else if(arguments.length === 5) {
+        surface = arguments[0];
+        if(arguments[1] instanceof Array) {
+            width = arguments[1][0];
+            height = arguments[1][1];
+            seed = arguments[2];
+        }
+        else {
+            width = arguments[1];
+            height = arguments[2];
+        }
+
+        if(arguments[3] instanceof Array && arguments[4] instanceof Array && arguments[3].length >= 5 && arguments[4].length >= 5) {
+            minR = arguments[3][0];
+            minG = arguments[3][1];
+            minB = arguments[3][2];
+            x1 = arguments[3][4];
+            y1 = arguments[3][5];
+
+            maxR = arguments[4][0];
+            maxG = arguments[4][1];
+            maxB = arguments[4][2];
+            x2 = arguments[4][4];
+            y2 = arguments[4][5];
+
+            if(arguments[3].length > 3)
+                minA = arguments[3][3];
+
+            if(arguments[4].length > 3)
+                maxA = arguments[4][3];
+        }
+        else {
+            throw new Error('Improper arguments for simplex surface');
+        }
+    }
+    else if(arguments.length === 4) {
+        surface = arguments[0];
+        if(arguments[1] instanceof Array) {
+            width = arguments[1][0];
+            height = arguments[1][1];
+        }
+        else {
+            throw new Error('Improper arguments for simplex surface');
+        }
+
+        if(arguments[2] instanceof Array && arguments[3] instanceof Array && arguments[2].length >= 5 && arguments[3].length >= 5) {
+            minR = arguments[2][0];
+            minG = arguments[2][1];
+            minB = arguments[2][2];
+            x1 = arguments[2][4];
+            y1 = arguments[2][5];
+
+            maxR = arguments[3][0];
+            maxG = arguments[3][1];
+            maxB = arguments[3][2];
+            x1 = arguments[3][4];
+            y1 = arguments[3][5];
+
+            if(arguments[2].length > 3)
+                minA = arguments[2][3];
+
+            if(arguments[3].length > 3)
+                maxA = arguments[3][3];
+        }
+        else {
+            throw new Error('Improper arguments for simplex surface');
+        }
+    }
+    else {
+        throw new Error('Improper arguments for simplex surface');
+    }
+
+    minR = minR || defaults.min;
+    minG = minG || defaults.min;
+    minB = minB || defaults.min;
+    minA = minA || defaults.min;
+    x1 = x1 || defaults.x1;
+    y1 = y1 || defaults.y1;
+
+    maxR = maxR || maxR === 0 ? maxR : defaults.max;
+    maxG = maxG || maxG === 0 ? maxG : defaults.max;
+    maxB = maxB || maxB === 0 ? maxB : defaults.max;
+    maxA = maxA || maxA === 0 ? maxA : defaults.max;
+    x2 = x2 || defaults.x2;
+    y2 = y2 || defaults.y2;
+
+    seed = seed || defaults.seed;
+
+    rand = random.Alea(seed);
+
+    surface = new SurfaceArray([width, height]);
+
+    var xPos, yPos;
+
+    function value(min, max, percent) {
+        return Math.floor((max - min) * percent + min);
+    }
+
+    var pi = Math.PI;
+    var cos = Math.cos;
+    var sin = Math.sin;
+    var noise = new SimplexNoise(rand.random);
+    for(xPos = 0; xPos < width; xPos++) {
+        for(yPos = 0; yPos < height; yPos++) {
+            var s = xPos/width;
+            var t = yPos/height;
+            var dx = x2 - x1;
+            var dy = y2 - y1;
+
+            var nx = x1+cos(s*2*pi) * dx/(2*pi);
+            var ny = y1+cos(t*2*pi) * dy/(2*pi);
+            var nz = x1+sin(s*2*pi) * dx/(2*pi);
+            var nw = y1+sin(t*2*pi) * dy/(2*pi);
+
+            var val = noise.noise4D(nx, ny, nz, nw) + 1;
+            val /= 2;
+
+            var r = value(minR, maxR, val);
+            var g = value(minG, maxG, val);
+            var b = value(minB, maxB, val);
+            var a = value(minA, maxA, val);
+
+            surface.set(xPos, yPos, [r, g, b, a]);
         }
     }
 
@@ -8307,11 +8901,12 @@ function voronoi() {
 module.exports = {
     noise: noise,
     relative: relative,
+    simplex: simplex,
     solid: solid,
     voronoi: voronoi
 };
 
-},{"gamejs":2,"voronoi-diagram":50}],52:[function(require,module,exports){
+},{"gamejs":2,"simplex-noise":29,"voronoi-diagram":51}],53:[function(require,module,exports){
 module.exports = {
     source: {
         isSource: true,
@@ -8334,9 +8929,9 @@ module.exports = {
     }
 };
 
-},{}],53:[function(require,module,exports){
-module.exports = ["images/cursor_pointerFlat_shadow.png","images/grey_arrowDownGrey.png","images/grey_arrow_down.png","images/grey_arrow_up.png","images/menus/glass/center.png","images/menus/glass/corner-cut.png","images/menus/glass/corner-round.png","images/menus/glass/horizontal.png","images/menus/glass/vertical.png","images/menus/metal/center.png","images/menus/metal/corner.png","images/menus/metal/horizontal.png","images/menus/metal/red/half/split.png","images/menus/metal/red/top-left.png","images/menus/metal/red/top-right.png","images/menus/metal/red/top.png","images/menus/metal/vertical.png","images/red_x.png"];
 },{}],54:[function(require,module,exports){
+module.exports = ["images/cursor_pointerFlat_shadow.png","images/grey_arrowDownGrey.png","images/grey_arrow_down.png","images/grey_arrow_up.png","images/menus/glass/center.png","images/menus/glass/corner-cut.png","images/menus/glass/corner-round.png","images/menus/glass/horizontal.png","images/menus/glass/vertical.png","images/menus/metal/center.png","images/menus/metal/corner.png","images/menus/metal/horizontal.png","images/menus/metal/red/half/split.png","images/menus/metal/red/top-left.png","images/menus/metal/red/top-right.png","images/menus/metal/red/top.png","images/menus/metal/vertical.png","images/red_x.png"];
+},{}],55:[function(require,module,exports){
 var instance = jsPlumb.getInstance({
     Container: 'wrapper',
     Connector: [ 'Bezier', { curviness: 1 } ],
@@ -8348,9 +8943,9 @@ var instance = jsPlumb.getInstance({
 
 module.exports = instance;
 
-},{}],55:[function(require,module,exports){
-module.exports = [{ name: "blit", layer: require("./layers/blit") },{ name: "noise", layer: require("./layers/noise") },{ name: "rotate", layer: require("./layers/rotate") },{ name: "shadow", layer: require("./layers/shadow") },{ name: "solid", layer: require("./layers/solid") },{ name: "voronoi", layer: require("./layers/voronoi") }];
-},{"./layers/blit":56,"./layers/noise":61,"./layers/rotate":62,"./layers/shadow":63,"./layers/solid":64,"./layers/voronoi":65}],56:[function(require,module,exports){
+},{}],56:[function(require,module,exports){
+module.exports = [{ name: "blit", layer: require("./layers/blit") },{ name: "noise", layer: require("./layers/noise") },{ name: "rotate", layer: require("./layers/rotate") },{ name: "shadow", layer: require("./layers/shadow") },{ name: "simplex", layer: require("./layers/simplex") },{ name: "solid", layer: require("./layers/solid") },{ name: "voronoi", layer: require("./layers/voronoi") }];
+},{"./layers/blit":57,"./layers/noise":62,"./layers/rotate":63,"./layers/shadow":64,"./layers/simplex":65,"./layers/solid":66,"./layers/voronoi":67}],57:[function(require,module,exports){
 var SurfaceFactory = require('../SurfaceFactory');
 var menuBuilder = require('../menuBuilder');
 var plumb = require('../jsPlumbInstance');
@@ -8435,7 +9030,7 @@ module.exports = function(onchange, layerControl) {
     return obj;
 };
 
-},{"../SurfaceFactory":51,"../connectors":52,"../jsPlumbInstance":54,"../menuBuilder":66,"../util/guid":68}],57:[function(require,module,exports){
+},{"../SurfaceFactory":52,"../connectors":53,"../jsPlumbInstance":55,"../menuBuilder":68,"../util/guid":70}],58:[function(require,module,exports){
 var plumb = require('../../jsPlumbInstance');
 
 module.exports = function(layers, onchange) {
@@ -8467,7 +9062,7 @@ module.exports = function(layers, onchange) {
 };
 
 
-},{"../../jsPlumbInstance":54}],58:[function(require,module,exports){
+},{"../../jsPlumbInstance":55}],59:[function(require,module,exports){
 module.exports = function(listeners, onchange, label, def, min, max) {
     var wrapper = document.createElement('div');
     wrapper.innerHTML = label;
@@ -8503,7 +9098,7 @@ module.exports = function(listeners, onchange, label, def, min, max) {
     return wrapper;
 };
 
-},{}],59:[function(require,module,exports){
+},{}],60:[function(require,module,exports){
 module.exports = function(listeners, onchange, label, minVal, maxVal) {
     var wrapper = document.createElement('div');
     wrapper.innerHTML = label;
@@ -8571,7 +9166,7 @@ module.exports = function(listeners, onchange, label, minVal, maxVal) {
 };
 
 
-},{}],60:[function(require,module,exports){
+},{}],61:[function(require,module,exports){
 module.exports = function(listeners, onchange, label, def) {
     var wrapper = document.createElement('div');
     wrapper.innerHTML = label;
@@ -8595,7 +9190,7 @@ module.exports = function(listeners, onchange, label, def) {
     return wrapper;
 };
 
-},{}],61:[function(require,module,exports){
+},{}],62:[function(require,module,exports){
 var SurfaceFactory = require('../SurfaceFactory');
 var menuBuilder = require('../menuBuilder');
 var text = require('./component/textInput');
@@ -8675,7 +9270,7 @@ module.exports = function(onchange, layerControl) {
     return obj;
 };
 
-},{"../SurfaceFactory":51,"../connectors":52,"../jsPlumbInstance":54,"../menuBuilder":66,"../util/guid":68,"./component/numberRangeInput":59,"./component/textInput":60}],62:[function(require,module,exports){
+},{"../SurfaceFactory":52,"../connectors":53,"../jsPlumbInstance":55,"../menuBuilder":68,"../util/guid":70,"./component/numberRangeInput":60,"./component/textInput":61}],63:[function(require,module,exports){
 var SurfaceFactory = require('../SurfaceFactory');
 var menuBuilder = require('../menuBuilder');
 var number = require('./component/numberInput');
@@ -8755,7 +9350,7 @@ module.exports = function(onchange, layerControl) {
     return obj;
 };
 
-},{"../SurfaceFactory":51,"../connectors":52,"../jsPlumbInstance":54,"../menuBuilder":66,"../util/guid":68,"./component/numberInput":58}],63:[function(require,module,exports){
+},{"../SurfaceFactory":52,"../connectors":53,"../jsPlumbInstance":55,"../menuBuilder":68,"../util/guid":70,"./component/numberInput":59}],64:[function(require,module,exports){
 var SurfaceFactory = require('../SurfaceFactory');
 var menuBuilder = require('../menuBuilder');
 var numberRange = require('./component/numberRangeInput');
@@ -8999,7 +9594,97 @@ module.exports = function(onchange, layerControl) {
     return obj;
 };
 
-},{"../SurfaceFactory":51,"../connectors":52,"../jsPlumbInstance":54,"../menuBuilder":66,"../util/guid":68,"./component/numberInput":58,"./component/numberRangeInput":59}],64:[function(require,module,exports){
+},{"../SurfaceFactory":52,"../connectors":53,"../jsPlumbInstance":55,"../menuBuilder":68,"../util/guid":70,"./component/numberInput":59,"./component/numberRangeInput":60}],65:[function(require,module,exports){
+var SurfaceFactory = require('../SurfaceFactory');
+var menuBuilder = require('../menuBuilder');
+var text = require('./component/textInput');
+var numberRange = require('./component/numberRangeInput');
+var plumb = require('../jsPlumbInstance');
+var conn = require('../connectors');
+var guid = require('../util/guid');
+
+function render(data, size) {
+    var args = data.listeners;
+    var surf = SurfaceFactory.simplex(data.surface,
+        [size, size],
+        args.seed.value(),
+        [
+            args.red.min.value(),
+            args.green.min.value(),
+            args.blue.min.value(),
+            args.alpha.min.value(),
+            args.x.min.value(),
+            args.y.min.value()
+        ],
+        [
+            args.red.max.value(),
+            args.green.max.value(),
+            args.blue.max.value(),
+            args.alpha.max.value(),
+            args.x.max.value(),
+            args.y.max.value()
+        ]);
+    //TODO: remove cache hack
+    data.surface = surf;
+    return surf;
+}
+
+module.exports = function(onchange, layerControl) {
+    var menu = menuBuilder([350, 240], 'metal');
+    menu.children[1].innerHTML = 'Simplex';
+    menu.id = guid();
+    var div = menu.children[4];
+
+    var listeners = {
+        seed: {},
+        red: {},
+        green: {},
+        blue: {},
+        alpha: {},
+        x: {},
+        y: {}
+    };
+
+    var controls = (function() {
+        var div = document.createElement('div');
+        div.className = 'controls';
+
+        var seedWrapper = text(listeners.seed, onchange, 'Seed: ', '1');
+
+        var redWrapper = numberRange(listeners.red, onchange, 'Red: ', 0, 255);
+        var greenWrapper = numberRange(listeners.green, onchange, 'Green: ', 0, 255);
+        var blueWrapper = numberRange(listeners.blue, onchange, 'Blue: ', 0, 255);
+        var alphaWrapper = numberRange(listeners.alpha, onchange, 'Alpha: ', 0, 255);
+        var xWrapper = numberRange(listeners.x, onchange, 'X: ', -100, 100);
+        var yWrapper = numberRange(listeners.y, onchange, 'Y: ', -100, 100);
+
+        div.appendChild(seedWrapper);
+        div.appendChild(redWrapper);
+        div.appendChild(greenWrapper);
+        div.appendChild(blueWrapper);
+        div.appendChild(alphaWrapper);
+        div.appendChild(xWrapper);
+        div.appendChild(yWrapper);
+
+        return div;
+    })();
+
+    var obj = {
+        div: menu,
+        listeners: listeners,
+        render: render,
+        connectors: []
+    };
+
+    menu.children[2].appendChild(layerControl(obj));
+    div.appendChild(controls);
+
+    obj.connectors.push(plumb.addEndpoint(menu, conn.source));
+
+    return obj;
+};
+
+},{"../SurfaceFactory":52,"../connectors":53,"../jsPlumbInstance":55,"../menuBuilder":68,"../util/guid":70,"./component/numberRangeInput":60,"./component/textInput":61}],66:[function(require,module,exports){
 var SurfaceFactory = require('../SurfaceFactory');
 var menuBuilder = require('../menuBuilder');
 var text = require('./component/textInput');
@@ -9045,7 +9730,7 @@ module.exports = function(onchange, layerControl) {
 };
 
 
-},{"../SurfaceFactory":51,"../connectors":52,"../jsPlumbInstance":54,"../menuBuilder":66,"../util/guid":68,"./component/textInput":60}],65:[function(require,module,exports){
+},{"../SurfaceFactory":52,"../connectors":53,"../jsPlumbInstance":55,"../menuBuilder":68,"../util/guid":70,"./component/textInput":61}],67:[function(require,module,exports){
 var SurfaceFactory = require('../SurfaceFactory');
 var menuBuilder = require('../menuBuilder');
 var text = require('./component/textInput');
@@ -9109,7 +9794,7 @@ module.exports = function(onchange, layerControl) {
     return obj;
 };
 
-},{"../SurfaceFactory":51,"../connectors":52,"../jsPlumbInstance":54,"../menuBuilder":66,"../util/guid":68,"./component/numberInput":58,"./component/textInput":60}],66:[function(require,module,exports){
+},{"../SurfaceFactory":52,"../connectors":53,"../jsPlumbInstance":55,"../menuBuilder":68,"../util/guid":70,"./component/numberInput":59,"./component/textInput":61}],68:[function(require,module,exports){
 var plumb = require('./jsPlumbInstance');
 
 function move(menu, binder) {
@@ -9311,9 +9996,9 @@ module.exports = function menu() {
     return newMenu;
 };
 
-},{"./jsPlumbInstance":54}],67:[function(require,module,exports){
+},{"./jsPlumbInstance":55}],69:[function(require,module,exports){
 module.exports = [];
-},{}],68:[function(require,module,exports){
+},{}],70:[function(require,module,exports){
 function s4() {
     return Math.floor((1 + Math.random()) * 0x10000)
         .toString(16)
@@ -9324,4 +10009,4 @@ module.exports = function guid() {
     return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
 };
 
-},{}]},{},[51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,1]);
+},{}]},{},[52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,1]);

@@ -1,5 +1,6 @@
 var gamejs = require('gamejs');
 var voronoiGenerator = require('voronoi-diagram');
+var simplexNoise = require('simplex-noise');
 var g = gamejs.graphics;
 var Surface = g.Surface;
 var SurfaceArray = g.SurfaceArray;
@@ -186,6 +187,191 @@ function relative() {
                 else
                     surface.set(xPos, yPos, color);
             }
+        }
+    }
+
+    return surface.surface;
+}
+
+function simplex() {
+    var width,
+        height,
+        seed,
+        rand,
+        minR,
+        minG,
+        minB,
+        minA,
+        maxR,
+        maxG,
+        maxB,
+        maxA,
+        x1,
+        x2,
+        y1,
+        y2,
+        surface;
+
+    var defaults = {
+        min: 0,
+        max: 255,
+        seed: 0,
+        x1: 0,
+        y1: 0,
+        x2: 10,
+        y2: 10
+    };
+
+    if(arguments.length === 6) {
+        if(arguments[4] instanceof Array && arguments[5] instanceof Array && arguments[4].length >= 5 && arguments[5].length >= 5) {
+            surface = arguments[0];
+            width = arguments[1];
+            height = arguments[2];
+            seed = arguments[3];
+            minR = arguments[4][0];
+            minG = arguments[4][1];
+            minB = arguments[4][2];
+            x1 = arguments[4][4];
+            y1 = arguments[4][5];
+            maxR = arguments[5][0];
+            maxG = arguments[5][1];
+            maxB = arguments[5][2];
+            x2 = arguments[5][4];
+            y2 = arguments[5][5];
+
+            if(arguments[4].length > 3)
+                minA = arguments[4][3];
+
+            if(arguments[5].length > 3)
+                maxA = arguments[5][3];
+        }
+        else {
+            throw new Error('Improper arguments for simplex surface');
+        }
+    }
+    else if(arguments.length === 5) {
+        surface = arguments[0];
+        if(arguments[1] instanceof Array) {
+            width = arguments[1][0];
+            height = arguments[1][1];
+            seed = arguments[2];
+        }
+        else {
+            width = arguments[1];
+            height = arguments[2];
+        }
+
+        if(arguments[3] instanceof Array && arguments[4] instanceof Array && arguments[3].length >= 5 && arguments[4].length >= 5) {
+            minR = arguments[3][0];
+            minG = arguments[3][1];
+            minB = arguments[3][2];
+            x1 = arguments[3][4];
+            y1 = arguments[3][5];
+
+            maxR = arguments[4][0];
+            maxG = arguments[4][1];
+            maxB = arguments[4][2];
+            x2 = arguments[4][4];
+            y2 = arguments[4][5];
+
+            if(arguments[3].length > 3)
+                minA = arguments[3][3];
+
+            if(arguments[4].length > 3)
+                maxA = arguments[4][3];
+        }
+        else {
+            throw new Error('Improper arguments for simplex surface');
+        }
+    }
+    else if(arguments.length === 4) {
+        surface = arguments[0];
+        if(arguments[1] instanceof Array) {
+            width = arguments[1][0];
+            height = arguments[1][1];
+        }
+        else {
+            throw new Error('Improper arguments for simplex surface');
+        }
+
+        if(arguments[2] instanceof Array && arguments[3] instanceof Array && arguments[2].length >= 5 && arguments[3].length >= 5) {
+            minR = arguments[2][0];
+            minG = arguments[2][1];
+            minB = arguments[2][2];
+            x1 = arguments[2][4];
+            y1 = arguments[2][5];
+
+            maxR = arguments[3][0];
+            maxG = arguments[3][1];
+            maxB = arguments[3][2];
+            x1 = arguments[3][4];
+            y1 = arguments[3][5];
+
+            if(arguments[2].length > 3)
+                minA = arguments[2][3];
+
+            if(arguments[3].length > 3)
+                maxA = arguments[3][3];
+        }
+        else {
+            throw new Error('Improper arguments for simplex surface');
+        }
+    }
+    else {
+        throw new Error('Improper arguments for simplex surface');
+    }
+
+    minR = minR || defaults.min;
+    minG = minG || defaults.min;
+    minB = minB || defaults.min;
+    minA = minA || defaults.min;
+    x1 = x1 || defaults.x1;
+    y1 = y1 || defaults.y1;
+
+    maxR = maxR || maxR === 0 ? maxR : defaults.max;
+    maxG = maxG || maxG === 0 ? maxG : defaults.max;
+    maxB = maxB || maxB === 0 ? maxB : defaults.max;
+    maxA = maxA || maxA === 0 ? maxA : defaults.max;
+    x2 = x2 || defaults.x2;
+    y2 = y2 || defaults.y2;
+
+    seed = seed || defaults.seed;
+
+    rand = random.Alea(seed);
+
+    surface = new SurfaceArray([width, height]);
+
+    var xPos, yPos;
+
+    function value(min, max, percent) {
+        return Math.floor((max - min) * percent + min);
+    }
+
+    var pi = Math.PI;
+    var cos = Math.cos;
+    var sin = Math.sin;
+    var noise = new SimplexNoise(rand.random);
+    for(xPos = 0; xPos < width; xPos++) {
+        for(yPos = 0; yPos < height; yPos++) {
+            var s = xPos/width;
+            var t = yPos/height;
+            var dx = x2 - x1;
+            var dy = y2 - y1;
+
+            var nx = x1+cos(s*2*pi) * dx/(2*pi);
+            var ny = y1+cos(t*2*pi) * dy/(2*pi);
+            var nz = x1+sin(s*2*pi) * dx/(2*pi);
+            var nw = y1+sin(t*2*pi) * dy/(2*pi);
+
+            var val = noise.noise4D(nx, ny, nz, nw) + 1;
+            val /= 2;
+
+            var r = value(minR, maxR, val);
+            var g = value(minG, maxG, val);
+            var b = value(minB, maxB, val);
+            var a = value(minA, maxA, val);
+
+            surface.set(xPos, yPos, [r, g, b, a]);
         }
     }
 
@@ -400,6 +586,7 @@ function voronoi() {
 module.exports = {
     noise: noise,
     relative: relative,
+    simplex: simplex,
     solid: solid,
     voronoi: voronoi
 };
