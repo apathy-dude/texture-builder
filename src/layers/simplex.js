@@ -2,6 +2,7 @@ var SurfaceFactory = require('../SurfaceFactory');
 var menuBuilder = require('../menuBuilder');
 var text = require('./component/textInput');
 var numberRange = require('./component/numberRangeInput');
+var number = require('./component/numberInput');
 var plumb = require('../jsPlumbInstance');
 var conn = require('../connectors');
 var guid = require('../util/guid');
@@ -26,14 +27,16 @@ function render(data, size) {
             args.alpha.max.value(),
             args.x.max.value(),
             args.y.max.value()
-        ]);
+        ],
+        args.octave.value(),
+        args.fade.value());
     //TODO: remove cache hack
     data.surface = surf;
     return surf;
 }
 
 module.exports = function(onchange, layerControl) {
-    var menu = menuBuilder([350, 240], 'metal');
+    var menu = menuBuilder([350, 290], 'metal');
     menu.children[1].innerHTML = 'Simplex';
     menu.id = guid();
     var div = menu.children[4];
@@ -45,7 +48,9 @@ module.exports = function(onchange, layerControl) {
         blue: {},
         alpha: {},
         x: {},
-        y: {}
+        y: {},
+        octave: {},
+        fade: {}
     };
 
     var controls = (function() {
@@ -60,6 +65,8 @@ module.exports = function(onchange, layerControl) {
         var alphaWrapper = numberRange(listeners.alpha, onchange, 'Alpha: ', 0, 255);
         var xWrapper = numberRange(listeners.x, onchange, 'X: ', -100, 100);
         var yWrapper = numberRange(listeners.y, onchange, 'Y: ', -100, 100);
+        var octavesWrapper = number(listeners.octave, onchange, 'Octave: ', 1, 1, 100);
+        var fadeWrapper = number(listeners.fade, onchange, 'FadeOff: ', 100, 0, 100);
 
         div.appendChild(seedWrapper);
         div.appendChild(redWrapper);
@@ -68,6 +75,8 @@ module.exports = function(onchange, layerControl) {
         div.appendChild(alphaWrapper);
         div.appendChild(xWrapper);
         div.appendChild(yWrapper);
+        div.appendChild(octavesWrapper);
+        div.appendChild(fadeWrapper);
 
         return div;
     })();

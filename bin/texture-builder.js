@@ -235,7 +235,7 @@ gamejs.onTick(function() {
     render(surface);
 });
 
-},{"./src/connectors":53,"./src/images":54,"./src/jsPlumbInstance":55,"./src/layers":56,"./src/layers/component/control":58,"./src/layers/component/numberInput":59,"./src/menuBuilder":68,"gamejs":2}],2:[function(require,module,exports){
+},{"./src/connectors":54,"./src/images":55,"./src/jsPlumbInstance":56,"./src/layers":57,"./src/layers/component/control":59,"./src/layers/component/numberInput":60,"./src/menuBuilder":69,"gamejs":2}],2:[function(require,module,exports){
 var matrix = require('./gamejs/math/matrix');
 var objects = require('./gamejs/utils/objects');
 var Callback = require('./gamejs/utils/callback').Callback;
@@ -5906,35 +5906,35 @@ SimplexNoise.prototype = {
         var kk = k & 255;
         var ll = l & 255;
         // Calculate the contribution from the five corners
-        var t0 = 0.6 - x0 * x0 - y0 * y0 - z0 * z0 - w0 * w0;
+        var t0 = 0.5 - x0 * x0 - y0 * y0 - z0 * z0 - w0 * w0;
         if (t0 < 0) n0 = 0.0;
         else {
             var gi0 = (perm[ii + perm[jj + perm[kk + perm[ll]]]] % 32) * 4;
             t0 *= t0;
             n0 = t0 * t0 * (grad4[gi0] * x0 + grad4[gi0 + 1] * y0 + grad4[gi0 + 2] * z0 + grad4[gi0 + 3] * w0);
         }
-        var t1 = 0.6 - x1 * x1 - y1 * y1 - z1 * z1 - w1 * w1;
+        var t1 = 0.5 - x1 * x1 - y1 * y1 - z1 * z1 - w1 * w1;
         if (t1 < 0) n1 = 0.0;
         else {
             var gi1 = (perm[ii + i1 + perm[jj + j1 + perm[kk + k1 + perm[ll + l1]]]] % 32) * 4;
             t1 *= t1;
             n1 = t1 * t1 * (grad4[gi1] * x1 + grad4[gi1 + 1] * y1 + grad4[gi1 + 2] * z1 + grad4[gi1 + 3] * w1);
         }
-        var t2 = 0.6 - x2 * x2 - y2 * y2 - z2 * z2 - w2 * w2;
+        var t2 = 0.5 - x2 * x2 - y2 * y2 - z2 * z2 - w2 * w2;
         if (t2 < 0) n2 = 0.0;
         else {
             var gi2 = (perm[ii + i2 + perm[jj + j2 + perm[kk + k2 + perm[ll + l2]]]] % 32) * 4;
             t2 *= t2;
             n2 = t2 * t2 * (grad4[gi2] * x2 + grad4[gi2 + 1] * y2 + grad4[gi2 + 2] * z2 + grad4[gi2 + 3] * w2);
         }
-        var t3 = 0.6 - x3 * x3 - y3 * y3 - z3 * z3 - w3 * w3;
+        var t3 = 0.5 - x3 * x3 - y3 * y3 - z3 * z3 - w3 * w3;
         if (t3 < 0) n3 = 0.0;
         else {
             var gi3 = (perm[ii + i3 + perm[jj + j3 + perm[kk + k3 + perm[ll + l3]]]] % 32) * 4;
             t3 *= t3;
             n3 = t3 * t3 * (grad4[gi3] * x3 + grad4[gi3 + 1] * y3 + grad4[gi3 + 2] * z3 + grad4[gi3 + 3] * w3);
         }
-        var t4 = 0.6 - x4 * x4 - y4 * y4 - z4 * z4 - w4 * w4;
+        var t4 = 0.5 - x4 * x4 - y4 * y4 - z4 * z4 - w4 * w4;
         if (t4 < 0) n4 = 0.0;
         else {
             var gi4 = (perm[ii + 1 + perm[jj + 1 + perm[kk + 1 + perm[ll + 1]]]] % 32) * 4;
@@ -8313,9 +8313,72 @@ function voronoi(points) {
   }
 }
 },{"circumcenter":30,"delaunay-triangulate":49,"uniq":50}],52:[function(require,module,exports){
+// Source: http://ronvalstar.nl/perlin-noise-versus-simplex-noise-in-javascript-final-comparison/
+// Heavily modified to use existing Simplex library
+//
+// PerlinSimplex 1.2
+// Ported from Stefan Gustavson's java implementation by Sean McCullough banksean@gmail.com
+// http://staffwww.itn.liu.se/~stegu/simplexnoise/simplexnoise.pdf
+// Read Stefan's excellent paper for details on how this code works.
+// octaves and falloff implementation (and passing jslint) by Ron Valstar
+// also implemented Karsten Schmidt's implementation
+
+var SimplexNoise = require('simplex-noise');
+
+module.exports = function() {
+    var iOctaves = 1;
+    var fPersistence = 0.5;
+    var fResult, fFreq, fPers;
+    var aOctFreq;
+    var aOctPers;
+    var fPersMax;
+
+    var octFreqPers = function octFreqPers() {
+        var fFreq, fPers;
+        aOctFreq = [];
+        aOctPers = [];
+        fPersMax = 0;
+        for (var i=0;i<iOctaves;i++) {
+            fFreq = Math.pow(2,i);
+            fPers = Math.pow(fPersistence,i);
+            fPersMax += fPers;
+            aOctFreq.push( fFreq );
+            aOctPers.push( fPers );
+        }
+        fPersMax = 1 / fPersMax;
+    };
+
+    var simplex;
+
+    return {
+        noise: function(x,y,z,w) {
+            fResult = 0;
+            for (g=0;g<iOctaves;g++) {
+                fFreq = aOctFreq[g];
+                fPers = aOctPers[g];
+                switch (arguments.length) {
+                    case 4:  fResult += fPers*simplex.noise4D(fFreq*x,fFreq*y,fFreq*z,fFreq*w); break;
+                    case 3:  fResult += fPers*simplex.noise3D(fFreq*x,fFreq*y,fFreq*z); break;
+                    default: fResult += fPers*simplex.noise2D(fFreq*x,fFreq*y);
+                }
+            }
+            return ( fResult*fPersMax + 1 )*0.5;
+        },
+        noiseDetail: function(octaves,falloff) {
+            iOctaves = octaves||iOctaves;
+            fPersistence = falloff||fPersistence;
+            octFreqPers();
+        },
+        setRng: function(r) {
+            simplex = new SimplexNoise(r);
+        }
+    };
+};
+
+},{"simplex-noise":29}],53:[function(require,module,exports){
 var gamejs = require('gamejs');
 var voronoiGenerator = require('voronoi-diagram');
-var simplexNoise = require('simplex-noise');
+var simplexNoise = require('./PerlinSimplex');
 var g = gamejs.graphics;
 var Surface = g.Surface;
 var SurfaceArray = g.SurfaceArray;
@@ -8525,6 +8588,8 @@ function simplex() {
         x2,
         y1,
         y2,
+        octaves,
+        fade,
         surface;
 
     var defaults = {
@@ -8537,7 +8602,7 @@ function simplex() {
         y2: 10
     };
 
-    if(arguments.length === 6) {
+    if(arguments.length === 8) {
         if(arguments[4] instanceof Array && arguments[5] instanceof Array && arguments[4].length >= 5 && arguments[5].length >= 5) {
             surface = arguments[0];
             width = arguments[1];
@@ -8553,18 +8618,21 @@ function simplex() {
             maxB = arguments[5][2];
             x2 = arguments[5][4];
             y2 = arguments[5][5];
+            octaves = arguments[6];
+            fade = arguments[7];
 
             if(arguments[4].length > 3)
                 minA = arguments[4][3];
 
             if(arguments[5].length > 3)
                 maxA = arguments[5][3];
+
         }
         else {
             throw new Error('Improper arguments for simplex surface');
         }
     }
-    else if(arguments.length === 5) {
+    else if(arguments.length === 7) {
         surface = arguments[0];
         if(arguments[1] instanceof Array) {
             width = arguments[1][0];
@@ -8575,6 +8643,9 @@ function simplex() {
             width = arguments[1];
             height = arguments[2];
         }
+
+        octaves = arguments[5];
+        fade = arguments[6];
 
         if(arguments[3] instanceof Array && arguments[4] instanceof Array && arguments[3].length >= 5 && arguments[4].length >= 5) {
             minR = arguments[3][0];
@@ -8665,7 +8736,9 @@ function simplex() {
     var pi = Math.PI;
     var cos = Math.cos;
     var sin = Math.sin;
-    var noise = new SimplexNoise(rand.random);
+    var noise = simplexNoise();
+    noise.setRng(rand.random);
+    noise.noiseDetail(octaves, fade);
     for(xPos = 0; xPos < width; xPos++) {
         for(yPos = 0; yPos < height; yPos++) {
             var s = xPos/width;
@@ -8678,7 +8751,7 @@ function simplex() {
             var nz = x1+sin(s*2*pi) * dx/(2*pi);
             var nw = y1+sin(t*2*pi) * dy/(2*pi);
 
-            var val = noise.noise4D(nx, ny, nz, nw) + 1;
+            var val = noise.noise(nx, ny, nz, nw) + 1;
             val /= 2;
 
             var r = value(minR, maxR, val);
@@ -8906,7 +8979,7 @@ module.exports = {
     voronoi: voronoi
 };
 
-},{"gamejs":2,"simplex-noise":29,"voronoi-diagram":51}],53:[function(require,module,exports){
+},{"./PerlinSimplex":52,"gamejs":2,"voronoi-diagram":51}],54:[function(require,module,exports){
 module.exports = {
     source: {
         isSource: true,
@@ -8929,9 +9002,9 @@ module.exports = {
     }
 };
 
-},{}],54:[function(require,module,exports){
-module.exports = ["images/cursor_pointerFlat_shadow.png","images/grey_arrowDownGrey.png","images/grey_arrow_down.png","images/grey_arrow_up.png","images/menus/glass/center.png","images/menus/glass/corner-cut.png","images/menus/glass/corner-round.png","images/menus/glass/horizontal.png","images/menus/glass/vertical.png","images/menus/metal/center.png","images/menus/metal/corner.png","images/menus/metal/horizontal.png","images/menus/metal/red/half/split.png","images/menus/metal/red/top-left.png","images/menus/metal/red/top-right.png","images/menus/metal/red/top.png","images/menus/metal/vertical.png","images/red_x.png"];
 },{}],55:[function(require,module,exports){
+module.exports = ["images/cursor_pointerFlat_shadow.png","images/grey_arrowDownGrey.png","images/grey_arrow_down.png","images/grey_arrow_up.png","images/menus/glass/center.png","images/menus/glass/corner-cut.png","images/menus/glass/corner-round.png","images/menus/glass/horizontal.png","images/menus/glass/vertical.png","images/menus/metal/center.png","images/menus/metal/corner.png","images/menus/metal/horizontal.png","images/menus/metal/red/half/split.png","images/menus/metal/red/top-left.png","images/menus/metal/red/top-right.png","images/menus/metal/red/top.png","images/menus/metal/vertical.png","images/red_x.png"];
+},{}],56:[function(require,module,exports){
 var instance = jsPlumb.getInstance({
     Container: 'wrapper',
     Connector: [ 'Bezier', { curviness: 1 } ],
@@ -8943,9 +9016,9 @@ var instance = jsPlumb.getInstance({
 
 module.exports = instance;
 
-},{}],56:[function(require,module,exports){
+},{}],57:[function(require,module,exports){
 module.exports = [{ name: "blit", layer: require("./layers/blit") },{ name: "noise", layer: require("./layers/noise") },{ name: "rotate", layer: require("./layers/rotate") },{ name: "shadow", layer: require("./layers/shadow") },{ name: "simplex", layer: require("./layers/simplex") },{ name: "solid", layer: require("./layers/solid") },{ name: "voronoi", layer: require("./layers/voronoi") }];
-},{"./layers/blit":57,"./layers/noise":62,"./layers/rotate":63,"./layers/shadow":64,"./layers/simplex":65,"./layers/solid":66,"./layers/voronoi":67}],57:[function(require,module,exports){
+},{"./layers/blit":58,"./layers/noise":63,"./layers/rotate":64,"./layers/shadow":65,"./layers/simplex":66,"./layers/solid":67,"./layers/voronoi":68}],58:[function(require,module,exports){
 var SurfaceFactory = require('../SurfaceFactory');
 var menuBuilder = require('../menuBuilder');
 var plumb = require('../jsPlumbInstance');
@@ -9030,7 +9103,7 @@ module.exports = function(onchange, layerControl) {
     return obj;
 };
 
-},{"../SurfaceFactory":52,"../connectors":53,"../jsPlumbInstance":55,"../menuBuilder":68,"../util/guid":70}],58:[function(require,module,exports){
+},{"../SurfaceFactory":53,"../connectors":54,"../jsPlumbInstance":56,"../menuBuilder":69,"../util/guid":71}],59:[function(require,module,exports){
 var plumb = require('../../jsPlumbInstance');
 
 module.exports = function(layers, onchange) {
@@ -9062,7 +9135,7 @@ module.exports = function(layers, onchange) {
 };
 
 
-},{"../../jsPlumbInstance":55}],59:[function(require,module,exports){
+},{"../../jsPlumbInstance":56}],60:[function(require,module,exports){
 module.exports = function(listeners, onchange, label, def, min, max) {
     var wrapper = document.createElement('div');
     wrapper.innerHTML = label;
@@ -9098,7 +9171,7 @@ module.exports = function(listeners, onchange, label, def, min, max) {
     return wrapper;
 };
 
-},{}],60:[function(require,module,exports){
+},{}],61:[function(require,module,exports){
 module.exports = function(listeners, onchange, label, minVal, maxVal) {
     var wrapper = document.createElement('div');
     wrapper.innerHTML = label;
@@ -9166,7 +9239,7 @@ module.exports = function(listeners, onchange, label, minVal, maxVal) {
 };
 
 
-},{}],61:[function(require,module,exports){
+},{}],62:[function(require,module,exports){
 module.exports = function(listeners, onchange, label, def) {
     var wrapper = document.createElement('div');
     wrapper.innerHTML = label;
@@ -9190,7 +9263,7 @@ module.exports = function(listeners, onchange, label, def) {
     return wrapper;
 };
 
-},{}],62:[function(require,module,exports){
+},{}],63:[function(require,module,exports){
 var SurfaceFactory = require('../SurfaceFactory');
 var menuBuilder = require('../menuBuilder');
 var text = require('./component/textInput');
@@ -9270,7 +9343,7 @@ module.exports = function(onchange, layerControl) {
     return obj;
 };
 
-},{"../SurfaceFactory":52,"../connectors":53,"../jsPlumbInstance":55,"../menuBuilder":68,"../util/guid":70,"./component/numberRangeInput":60,"./component/textInput":61}],63:[function(require,module,exports){
+},{"../SurfaceFactory":53,"../connectors":54,"../jsPlumbInstance":56,"../menuBuilder":69,"../util/guid":71,"./component/numberRangeInput":61,"./component/textInput":62}],64:[function(require,module,exports){
 var SurfaceFactory = require('../SurfaceFactory');
 var menuBuilder = require('../menuBuilder');
 var number = require('./component/numberInput');
@@ -9350,7 +9423,7 @@ module.exports = function(onchange, layerControl) {
     return obj;
 };
 
-},{"../SurfaceFactory":52,"../connectors":53,"../jsPlumbInstance":55,"../menuBuilder":68,"../util/guid":70,"./component/numberInput":59}],64:[function(require,module,exports){
+},{"../SurfaceFactory":53,"../connectors":54,"../jsPlumbInstance":56,"../menuBuilder":69,"../util/guid":71,"./component/numberInput":60}],65:[function(require,module,exports){
 var SurfaceFactory = require('../SurfaceFactory');
 var menuBuilder = require('../menuBuilder');
 var numberRange = require('./component/numberRangeInput');
@@ -9594,11 +9667,12 @@ module.exports = function(onchange, layerControl) {
     return obj;
 };
 
-},{"../SurfaceFactory":52,"../connectors":53,"../jsPlumbInstance":55,"../menuBuilder":68,"../util/guid":70,"./component/numberInput":59,"./component/numberRangeInput":60}],65:[function(require,module,exports){
+},{"../SurfaceFactory":53,"../connectors":54,"../jsPlumbInstance":56,"../menuBuilder":69,"../util/guid":71,"./component/numberInput":60,"./component/numberRangeInput":61}],66:[function(require,module,exports){
 var SurfaceFactory = require('../SurfaceFactory');
 var menuBuilder = require('../menuBuilder');
 var text = require('./component/textInput');
 var numberRange = require('./component/numberRangeInput');
+var number = require('./component/numberInput');
 var plumb = require('../jsPlumbInstance');
 var conn = require('../connectors');
 var guid = require('../util/guid');
@@ -9623,14 +9697,16 @@ function render(data, size) {
             args.alpha.max.value(),
             args.x.max.value(),
             args.y.max.value()
-        ]);
+        ],
+        args.octave.value(),
+        args.fade.value());
     //TODO: remove cache hack
     data.surface = surf;
     return surf;
 }
 
 module.exports = function(onchange, layerControl) {
-    var menu = menuBuilder([350, 240], 'metal');
+    var menu = menuBuilder([350, 290], 'metal');
     menu.children[1].innerHTML = 'Simplex';
     menu.id = guid();
     var div = menu.children[4];
@@ -9642,7 +9718,9 @@ module.exports = function(onchange, layerControl) {
         blue: {},
         alpha: {},
         x: {},
-        y: {}
+        y: {},
+        octave: {},
+        fade: {}
     };
 
     var controls = (function() {
@@ -9657,6 +9735,8 @@ module.exports = function(onchange, layerControl) {
         var alphaWrapper = numberRange(listeners.alpha, onchange, 'Alpha: ', 0, 255);
         var xWrapper = numberRange(listeners.x, onchange, 'X: ', -100, 100);
         var yWrapper = numberRange(listeners.y, onchange, 'Y: ', -100, 100);
+        var octavesWrapper = number(listeners.octave, onchange, 'Octave: ', 1, 1, 100);
+        var fadeWrapper = number(listeners.fade, onchange, 'FadeOff: ', 100, 0, 100);
 
         div.appendChild(seedWrapper);
         div.appendChild(redWrapper);
@@ -9665,6 +9745,8 @@ module.exports = function(onchange, layerControl) {
         div.appendChild(alphaWrapper);
         div.appendChild(xWrapper);
         div.appendChild(yWrapper);
+        div.appendChild(octavesWrapper);
+        div.appendChild(fadeWrapper);
 
         return div;
     })();
@@ -9684,7 +9766,7 @@ module.exports = function(onchange, layerControl) {
     return obj;
 };
 
-},{"../SurfaceFactory":52,"../connectors":53,"../jsPlumbInstance":55,"../menuBuilder":68,"../util/guid":70,"./component/numberRangeInput":60,"./component/textInput":61}],66:[function(require,module,exports){
+},{"../SurfaceFactory":53,"../connectors":54,"../jsPlumbInstance":56,"../menuBuilder":69,"../util/guid":71,"./component/numberInput":60,"./component/numberRangeInput":61,"./component/textInput":62}],67:[function(require,module,exports){
 var SurfaceFactory = require('../SurfaceFactory');
 var menuBuilder = require('../menuBuilder');
 var text = require('./component/textInput');
@@ -9730,7 +9812,7 @@ module.exports = function(onchange, layerControl) {
 };
 
 
-},{"../SurfaceFactory":52,"../connectors":53,"../jsPlumbInstance":55,"../menuBuilder":68,"../util/guid":70,"./component/textInput":61}],67:[function(require,module,exports){
+},{"../SurfaceFactory":53,"../connectors":54,"../jsPlumbInstance":56,"../menuBuilder":69,"../util/guid":71,"./component/textInput":62}],68:[function(require,module,exports){
 var SurfaceFactory = require('../SurfaceFactory');
 var menuBuilder = require('../menuBuilder');
 var text = require('./component/textInput');
@@ -9794,7 +9876,7 @@ module.exports = function(onchange, layerControl) {
     return obj;
 };
 
-},{"../SurfaceFactory":52,"../connectors":53,"../jsPlumbInstance":55,"../menuBuilder":68,"../util/guid":70,"./component/numberInput":59,"./component/textInput":61}],68:[function(require,module,exports){
+},{"../SurfaceFactory":53,"../connectors":54,"../jsPlumbInstance":56,"../menuBuilder":69,"../util/guid":71,"./component/numberInput":60,"./component/textInput":62}],69:[function(require,module,exports){
 var plumb = require('./jsPlumbInstance');
 
 function move(menu, binder) {
@@ -9996,9 +10078,9 @@ module.exports = function menu() {
     return newMenu;
 };
 
-},{"./jsPlumbInstance":55}],69:[function(require,module,exports){
+},{"./jsPlumbInstance":56}],70:[function(require,module,exports){
 module.exports = [];
-},{}],70:[function(require,module,exports){
+},{}],71:[function(require,module,exports){
 function s4() {
     return Math.floor((1 + Math.random()) * 0x10000)
         .toString(16)
@@ -10009,4 +10091,4 @@ module.exports = function guid() {
     return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
 };
 
-},{}]},{},[52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,1]);
+},{}]},{},[52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,1]);

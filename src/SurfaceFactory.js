@@ -1,6 +1,6 @@
 var gamejs = require('gamejs');
 var voronoiGenerator = require('voronoi-diagram');
-var simplexNoise = require('simplex-noise');
+var simplexNoise = require('./PerlinSimplex');
 var g = gamejs.graphics;
 var Surface = g.Surface;
 var SurfaceArray = g.SurfaceArray;
@@ -210,6 +210,8 @@ function simplex() {
         x2,
         y1,
         y2,
+        octaves,
+        fade,
         surface;
 
     var defaults = {
@@ -222,7 +224,7 @@ function simplex() {
         y2: 10
     };
 
-    if(arguments.length === 6) {
+    if(arguments.length === 8) {
         if(arguments[4] instanceof Array && arguments[5] instanceof Array && arguments[4].length >= 5 && arguments[5].length >= 5) {
             surface = arguments[0];
             width = arguments[1];
@@ -238,18 +240,21 @@ function simplex() {
             maxB = arguments[5][2];
             x2 = arguments[5][4];
             y2 = arguments[5][5];
+            octaves = arguments[6];
+            fade = arguments[7];
 
             if(arguments[4].length > 3)
                 minA = arguments[4][3];
 
             if(arguments[5].length > 3)
                 maxA = arguments[5][3];
+
         }
         else {
             throw new Error('Improper arguments for simplex surface');
         }
     }
-    else if(arguments.length === 5) {
+    else if(arguments.length === 7) {
         surface = arguments[0];
         if(arguments[1] instanceof Array) {
             width = arguments[1][0];
@@ -260,6 +265,9 @@ function simplex() {
             width = arguments[1];
             height = arguments[2];
         }
+
+        octaves = arguments[5];
+        fade = arguments[6];
 
         if(arguments[3] instanceof Array && arguments[4] instanceof Array && arguments[3].length >= 5 && arguments[4].length >= 5) {
             minR = arguments[3][0];
@@ -350,7 +358,9 @@ function simplex() {
     var pi = Math.PI;
     var cos = Math.cos;
     var sin = Math.sin;
-    var noise = new SimplexNoise(rand.random);
+    var noise = simplexNoise();
+    noise.setRng(rand.random);
+    noise.noiseDetail(octaves, fade);
     for(xPos = 0; xPos < width; xPos++) {
         for(yPos = 0; yPos < height; yPos++) {
             var s = xPos/width;
@@ -363,7 +373,7 @@ function simplex() {
             var nz = x1+sin(s*2*pi) * dx/(2*pi);
             var nw = y1+sin(t*2*pi) * dy/(2*pi);
 
-            var val = noise.noise4D(nx, ny, nz, nw) + 1;
+            var val = noise.noise(nx, ny, nz, nw) + 1;
             val /= 2;
 
             var r = value(minR, maxR, val);
