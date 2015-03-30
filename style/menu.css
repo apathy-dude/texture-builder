@@ -10,6 +10,18 @@
     overflow: hidden;
 }
 
+.menu > div {
+    z-index: -1;
+}
+
+.menu .content {
+    padding: 12px;
+    padding-top: 32px;
+    width: calc(100% - 24px);
+    height: calc(100% - 44px);
+    background: none;
+}
+
 .menu .top-left {
     display: block;
     position: absolute;
@@ -88,7 +100,7 @@
     bottom: 0px;
     right: 0px;
     transform:rotate(180deg);
-    i/*cursor: se-resize;*/
+    /*cursor: se-resize;*/
 }
 
 .menu.glass .corner1, .menu.glass .corner {

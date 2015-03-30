@@ -37,10 +37,10 @@ function render(data, size) {
 }
 
 module.exports = function(onchange, layerControl) {
-    var menu = menuBuilder([350, 193], 'metal');
-    menu.children[1].innerHTML = 'Rotate';
+    var menu = menuBuilder([180, 96], 'metal');
+    menu.setTitle('Rotate');
     menu.id = guid();
-    var div = menu.children[4];
+    var div = menu.content;
 
     var listeners = {
         angle: {}
@@ -68,7 +68,7 @@ module.exports = function(onchange, layerControl) {
         connectors: []
     };
 
-    menu.children[2].appendChild(layerControl(obj));
+    div.appendChild(layerControl(obj));
     div.appendChild(controls);
 
     obj.connectors.push(plumb.addEndpoint(menu, conn.target, conn.targetMid));

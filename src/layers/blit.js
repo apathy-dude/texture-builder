@@ -44,9 +44,9 @@ function render(data, size) {
 
 module.exports = function(onchange, layerControl) {
     var menu = menuBuilder([110, 120], 'metal');
-    menu.children[1].innerHTML = 'Blit';
+    menu.setTitle('Blit');
     menu.id = guid();
-    var div = menu.children[4];
+    var div = menu.content;
 
     var listeners = {};
 
@@ -66,7 +66,7 @@ module.exports = function(onchange, layerControl) {
         connectors: []
     };
 
-    menu.children[2].appendChild(layerControl(obj));
+    div.appendChild(layerControl(obj));
 
     var endConn = plumb.addEndpoint(menu, conn.source);
     var topId = plumb.addEndpoint(menu, conn.target, conn.targetTop);

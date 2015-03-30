@@ -36,10 +36,10 @@ function render(data, size) {
 }
 
 module.exports = function(onchange, layerControl) {
-    var menu = menuBuilder([350, 290], 'metal');
-    menu.children[1].innerHTML = 'Simplex';
+    var menu = menuBuilder([280, 270], 'metal');
+    menu.setTitle('Simplex');
     menu.id = guid();
-    var div = menu.children[4];
+    var div = menu.content;
 
     var listeners = {
         seed: {},
@@ -88,7 +88,7 @@ module.exports = function(onchange, layerControl) {
         connectors: []
     };
 
-    menu.children[2].appendChild(layerControl(obj));
+    div.appendChild(layerControl(obj));
     div.appendChild(controls);
 
     obj.connectors.push(plumb.addEndpoint(menu, conn.source));

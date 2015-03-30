@@ -14,10 +14,10 @@ function render(data, size) {
 }
 
 module.exports = function(onchange, layerControl) {
-    var menu = menuBuilder([350, 98], 'metal');
-    menu.children[1].innerHTML = 'Solid';
+    var menu = menuBuilder([290, 96], 'metal');
+    menu.setTitle('Solid');
     menu.id = guid();
-    var div = menu.children[4];
+    var div = menu.content;
 
     var listeners = {
         color: {}
@@ -35,7 +35,7 @@ module.exports = function(onchange, layerControl) {
 
     var out = { div: menu, listeners: listeners, render: render, surface: null, connectors: [] };
 
-    menu.children[2].appendChild(layerControl(out));
+    div.appendChild(layerControl(out));
     div.appendChild(controls);
     out.connectors.push(plumb.addEndpoint(menu, conn.source));
 

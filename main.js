@@ -36,9 +36,9 @@ function onchange(e) {
 }
 
 function outputLayer() {
-    var menu = menuBuilder([285, 150], 'metal');
-    menu.children[1].innerHTML = 'Output';
-    var menuCenter = menu.children[4];
+    var menu = menuBuilder([240, 125], 'metal');
+    menu.setTitle('Output');
+    var menuCenter = menu.content;
     menu.id = OUTPUT_ID;
 
     var listeners = {

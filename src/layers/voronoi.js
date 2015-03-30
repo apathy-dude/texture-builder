@@ -22,10 +22,10 @@ function render(data, size) {
 }
 
 module.exports = function(onchange, layerControl) {
-    var menu = menuBuilder([350, 170], 'metal');
-    menu.children[1].innerHTML = 'Voronoi';
+    var menu = menuBuilder([290, 150], 'metal');
+    menu.setTitle('Voronoi');
     menu.id = guid();
-    var div = menu.children[4];
+    var div = menu.content;
 
     var listeners = {
         seed: {},
@@ -53,7 +53,7 @@ module.exports = function(onchange, layerControl) {
 
     var obj = { div: menu, listeners: listeners, render: render, surface: null, connectors: [] };
 
-    menu.children[2].appendChild(layerControl(obj));
+    div.appendChild(layerControl(obj));
     div.appendChild(controls);
 
     obj.connectors.push(plumb.addEndpoint(menu, conn.source));
